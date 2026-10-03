@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.env
+*.log
+
+.DS_Store
+
+ml/models/
+__pycache__/
+*.pyc
+
+venv/
