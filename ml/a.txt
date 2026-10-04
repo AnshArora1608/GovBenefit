@@ -1,0 +1,18 @@
+file_path="file.csv"
+file=open(file_path,'r')
+file.readline()
+avg={}
+for i in file:
+    
+    std_list=i.strip().split(",")
+    name=std_list[0]
+    t_marks=0
+    for marks in range(1,len(std_list)):
+        t_marks+=int(std_list[marks])
+        
+    
+    avgr=t_marks/(len(std_list)-1)
+    avg[name]=avgr
+print (avg)
+
+file.close()

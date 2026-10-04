@@ -24,6 +24,10 @@ app.get("/", (req, res) => {
     res.render("home");
 });
 
+const recommendationRoutes = require("./routes/recommendationRoutes");
+
+
+app.use("/recommend", recommendationRoutes);
 // Server
 const PORT = process.env.PORT || 8000;
 
