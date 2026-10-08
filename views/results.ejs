@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommended Government Schemes</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink: #14213d; --ink-soft: #3a4a6b;
+            --saffron: #e8871e; --saffron-dark: #c76d0c;
+            --green: #1f7a4d; --canvas: #eef1f6;
+            --line: #d9dfe9; --muted: #5b6678;
+        }
+        body { font-family: "Source Sans 3", system-ui, sans-serif; background: var(--canvas); color: var(--ink); }
+        h1, h2, h3, .num { font-family: "Bricolage Grotesque", "Source Sans 3", sans-serif; }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 16px 60px; }
+
+        /* Header */
+        .hero {
+            background: var(--ink); color: #fff; border-radius: 20px;
+            padding: 30px 32px; position: relative; overflow: hidden;
+        }
+        .hero::before {
+            content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+            background: linear-gradient(var(--saffron) 0 33%, #fff 33% 66%, var(--green) 66%);
+        }
+        .hero h1 { font-size: 1.9rem; margin-bottom: 6px; }
+        .hero p { color: #c3cce0; margin: 0; }
+        .profile-chip {
+            display: inline-block; background: rgba(255,255,255,.12); color: #fff;
+            border-radius: 999px; padding: 3px 12px; font-size: .84rem; margin: 12px 6px 0 0;
+        }
+        .btn-hero {
+            background: transparent; border: 1px solid rgba(255,255,255,.4); color: #fff;
+            border-radius: 10px; font-weight: 600;
+        }
+        .btn-hero:hover, .btn-hero:focus-visible { background: #fff; color: var(--ink); }
+
+        /* Stats */
+        .stat {
+            background: #fff; border-radius: 16px; padding: 18px 20px; height: 100%;
+            border: 1px solid var(--line);
+        }
+        .stat .num { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+        .stat .lbl { color: var(--muted); font-size: .9rem; }
+        .stat.benefit { background: #fff4e6; border-color: var(--saffron); }
+        .stat.benefit .num { color: var(--saffron-dark); }
+
+        /* Toolbar */
+        .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 26px 0 16px; }
+        .fchip {
+            border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+            border-radius: 999px; padding: 6px 15px; font-weight: 600; font-size: .9rem;
+        }
+        .fchip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+        .fchip:focus-visible { outline: 3px solid rgba(232,135,30,.4); }
+        .toolbar .spacer { flex: 1; }
+        .toolbar select { max-width: 190px; border-radius: 10px; }
+
+        /* Card */
+        .scheme-card {
+            background: #fff; border: 1px solid var(--line); border-radius: 18px;
+            padding: 22px 24px; margin-bottom: 16px;
+        }
+        .scheme-card.top { border-color: var(--saffron); box-shadow: 0 10px 28px rgba(232,135,30,.16); }
+        .scheme-title { font-size: 1.2rem; font-weight: 700; margin: 0 0 8px; }
+        .tag {
+            display: inline-block; border-radius: 6px; padding: 3px 10px;
+            font-size: .8rem; font-weight: 600; margin: 0 6px 6px 0;
+            background: #e7ecf6; color: var(--ink-soft);
+        }
+        .tag.best { background: var(--saffron); color: #1d1203; }
+        .tag.easy { background: #dff3e8; color: var(--green); }
+        .tag.soon { background: #fde4e1; color: #b3261e; }
+        .meta { color: var(--muted); font-size: .94rem; }
+
+        .ring {
+            --p: 0; width: 84px; height: 84px; border-radius: 50%; flex: none;
+            background: conic-gradient(var(--green) calc(var(--p) * 1%), #e4e9f2 0);
+            display: grid; place-items: center;
+        }
+        .ring > div {
+            width: 66px; height: 66px; border-radius: 50%; background: #fff;
+            display: grid; place-items: center; text-align: center; line-height: 1.05;
+        }
+        .ring b { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.15rem; }
+        .ring small { font-size: .65rem; color: var(--muted); }
+
+        .benefit-amt { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--green); }
+
+        .details-box { border-top: 1px dashed var(--line); margin-top: 16px; padding-top: 16px; }
+        .details-box h3 { font-size: .98rem; font-weight: 700; margin-bottom: 8px; }
+        .check-list { list-style: none; padding: 0; margin: 0; }
+        .check-list li { padding-left: 26px; position: relative; margin-bottom: 6px; }
+        .check-list li::before { content: "✔"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+        .doc-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; cursor: pointer; }
+        .doc-row input { accent-color: var(--green); width: 1.1em; height: 1.1em; }
+        .ready { font-weight: 700; font-size: .88rem; color: var(--green); }
+        .steps-list { padding-left: 20px; margin: 0; }
+
+        .btn-apply { background: var(--saffron); color: #1d1203; border: 0; font-weight: 700; border-radius: 10px; padding: 9px 20px; }
+        .btn-apply:hover, .btn-apply:focus-visible { background: var(--saffron-dark); color: #fff; }
+        .btn-soft { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); border-radius: 10px; font-weight: 600; }
+        .btn-soft:hover { border-color: var(--saffron); color: var(--ink); }
+
+        .docs-block {
+            background: #f7f9fc; border: 1px solid var(--line); border-radius: 14px;
+            padding: 14px 16px; margin-top: 16px;
+        }
+        .docs-block h3 { font-size: .98rem; font-weight: 700; margin: 0; }
+        .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 16px; }
+        .for-you-title { font-size: .82rem; font-weight: 700; color: var(--saffron-dark); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .03em; }
+        .doc-row.suggested span { color: var(--ink-soft); }
+        .doc-row:has(input:checked) span { text-decoration: line-through; color: var(--muted); }
+
+        .master {
+            background: #fff; border: 1px solid var(--saffron); border-radius: 18px;
+            padding: 20px 22px; margin-top: 22px;
+        }
+        .master-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 14px; }
+        .master-item {
+            display: flex; align-items: center; gap: 10px; cursor: pointer;
+            border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+        }
+        .master-item input { accent-color: var(--green); width: 1.1em; height: 1.1em; flex: none; }
+        .master-item:has(input:checked) { background: #e9f6ef; border-color: var(--green); }
+        .mname { font-weight: 600; flex: 1; }
+        .mcount { font-size: .78rem; color: var(--muted); }
+
+        .near {
+            background: #fff; border: 1px dashed var(--saffron); border-radius: 16px; padding: 18px 22px; margin-top: 28px;
+        }
+        .trust { color: var(--muted); font-size: .86rem; text-align: center; margin-top: 30px; }
+
+        @media (max-width: 575px) { .hero { padding: 24px 20px 24px 24px; } }
+        @media print {
+            body { background: #fff; }
+            .hero { background: #fff; color: #000; border: 1px solid #000; }
+            .hero p, .profile-chip { color: #000; }
+            .no-print, .toolbar { display: none !important; }
+            .scheme-card { break-inside: avoid; }
+            .collapse { display: block !important; }
+        }
+    </style>
+</head>
+
+<body>
+<%
+    var list = (typeof recommendations !== "undefined" && recommendations) ? recommendations : [];
+    var hasProfile = (typeof profile !== "undefined" && profile);
+    var near = (typeof near_misses !== "undefined" && near_misses) ? near_misses : [];
+    var master = (typeof master_docs !== "undefined" && master_docs) ? master_docs : [];
+
+    function pct(s) { var n = Number(s); if (isNaN(n)) n = 0; return Math.max(0, Math.min(100, n)); }
+    function money(n) { return "₹" + Number(n).toLocaleString("en-IN"); }
+
+    var best = list.length ? Math.max.apply(null, list.map(function (s) { return pct(s.score); })) : 0;
+    var central = list.filter(function (s) { return String(s.level).toLowerCase() === "central"; }).length;
+    var stateCount = list.length - central;
+    var totalBenefit = list.reduce(function (sum, s) { var b = Number(s.benefit_amount); return sum + (isNaN(b) ? 0 : b); }, 0);
+%>
+
+<div class="wrap">
+
+    <!-- Header -->
+    <section class="hero">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <h1>Your matched schemes</h1>
+                <p>Ranked by how well each scheme fits your profile.</p>
+                <% if (hasProfile) { %>
+                    <div>
+                        <% if (profile.state) { %><span class="profile-chip"><%= profile.state %></span><% } %>
+                        <% if (profile.age) { %><span class="profile-chip">Age <%= profile.age %></span><% } %>
+                        <% if (profile.social_cat) { %><span class="profile-chip"><%= profile.social_cat %></span><% } %>
+                        <% if (profile.income) { %><span class="profile-chip">Income <%= money(profile.income) %></span><% } %>
+                    </div>
+                <% } %>
+            </div>
+            <a href="/recommend" class="btn btn-hero no-print">Search again</a>
+        </div>
+    </section>
+
+    <% if (list.length === 0) { %>
+
+        <div class="scheme-card mt-4 text-center py-5">
+            <h2 class="h4">No matching schemes found</h2>
+            <p class="meta mb-3">Try a broader description of your need, or check your income and category.</p>
+            <a href="/recommend" class="btn btn-apply">Edit my details</a>
+        </div>
+
+    <% } else { %>
+
+        <!-- Stats -->
+        <div class="row g-3 mt-1">
+            <% if (totalBenefit > 0) { %>
+            <div class="col-6 col-md-3">
+                <div class="stat benefit">
+                    <div class="num"><%= money(totalBenefit) %></div>
+                    <div class="lbl">Total benefit you can claim</div>
+                </div>
+            </div>
+            <% } %>
+            <div class="col-6 col-md-3">
+                <div class="stat"><div class="num"><%= list.length %></div><div class="lbl">Schemes matched</div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat"><div class="num"><%= best.toFixed(0) %>%</div><div class="lbl">Best match score</div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat"><div class="num"><%= central %> / <%= stateCount %></div><div class="lbl">Central / State schemes</div></div>
+            </div>
+        </div>
+
+        <!-- Master document checklist -->
+        <% if (master.length) { %>
+        <section class="master no-break">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2 class="h5 mb-1">Your document checklist</h2>
+                    <div class="meta">Arrange these first. They are needed across your matched schemes.</div>
+                </div>
+            </div>
+            <div class="master-grid">
+                <% master.forEach(function (m) { %>
+                    <label class="master-item">
+                        <input type="checkbox">
+                        <span class="mname"><%= m.name %></span>
+                        <span class="mcount">needed in <%= m.count %> of <%= m.total %></span>
+                    </label>
+                <% }) %>
+            </div>
+        </section>
+        <% } %>
+
+        <!-- Toolbar -->
+        <div class="toolbar no-print" role="group" aria-label="Filters">
+            <button class="fchip active" data-filter="all">All</button>
+            <button class="fchip" data-filter="central">Central</button>
+            <button class="fchip" data-filter="state">State</button>
+            <button class="fchip" data-filter="online">Apply online</button>
+            <span class="spacer"></span>
+            <select id="sortBy" class="form-select form-select-sm" aria-label="Sort schemes">
+                <option value="score">Best match first</option>
+                <option value="benefit">Highest benefit first</option>
+            </select>
+            <button class="btn btn-soft btn-sm" onclick="window.print()">Save as PDF</button>
+        </div>
+
+        <!-- Cards -->
+        <div id="cards">
+        <% list.forEach(function (scheme, index) {
+            var score = pct(scheme.score);
+            var isOnline = String(scheme.app_mode || "").toLowerCase().indexOf("online") !== -1;
+            var isCentral = String(scheme.level || "").toLowerCase() === "central";
+            var reasons = Array.isArray(scheme.reasons) ? scheme.reasons : [];
+            var docs = Array.isArray(scheme.documents) ? scheme.documents : [];
+            var docsProfile = Array.isArray(scheme.docs_profile) ? scheme.docs_profile : [];
+            var steps = Array.isArray(scheme.apply_steps) ? scheme.apply_steps : [];
+            var hasDetails = reasons.length || steps.length || scheme.description;
+        %>
+            <article class="scheme-card <%= index === 0 ? 'top' : '' %>"
+                     data-level="<%= isCentral ? 'central' : 'state' %>"
+                     data-online="<%= isOnline ? '1' : '0' %>"
+                     data-score="<%= score %>"
+                     data-benefit="<%= Number(scheme.benefit_amount) || 0 %>"
+                     data-name="<%= scheme.scheme_name %>"
+                     data-url="<%= scheme.source_url %>">
+
+                <div class="d-flex gap-3 align-items-start">
+                    <div class="ring" style="--p: <%= score %>" role="img" aria-label="Match score <%= score.toFixed(0) %> percent">
+                        <div><span><b><%= score.toFixed(0) %>%</b><br><small>match</small></span></div>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <div>
+                            <% if (index === 0) { %><span class="tag best">Best match</span><% } %>
+                            <% if (isOnline) { %><span class="tag easy">Apply online</span><% } %>
+                            <% if (scheme.last_date) { %><span class="tag soon">Last date: <%= scheme.last_date %></span><% } %>
+                        </div>
+
+                        <h2 class="scheme-title"><%= scheme.scheme_name %></h2>
+
+                        <div>
+                            <span class="tag"><%= scheme.level %></span>
+                            <span class="tag"><%= scheme.benefit_type %></span>
+                            <span class="tag"><%= scheme.app_mode %></span>
+                        </div>
+                        <div class="meta">Applicable in: <%= scheme.state %></div>
+
+                        <% if (Number(scheme.benefit_amount) > 0) { %>
+                            <div class="benefit-amt mt-2">Benefit: up to <%= money(scheme.benefit_amount) %></div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Required documents (always visible) -->
+                <div class="docs-block" data-docs>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                        <h3>Documents required <span class="ready" data-ready></span></h3>
+                    </div>
+                    <% if (docs.length) { %>
+                        <div class="doc-grid">
+                            <% docs.forEach(function (d) { %>
+                                <label class="doc-row"><input type="checkbox"> <span><%= d %></span></label>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                    <% if (docsProfile.length) { %>
+                        <div class="for-you-title"><%= docs.length ? "Also keep ready (based on your profile)" : "Commonly needed (official list not in our data)" %></div>
+                        <div class="doc-grid">
+                            <% docsProfile.forEach(function (d) { %>
+                                <label class="doc-row suggested"><input type="checkbox"> <span><%= d %></span></label>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                    <% if (scheme.docs_fallback) { %>
+                        <div class="meta mt-2">Please confirm the exact list on the official page.</div>
+                    <% } else { %>
+                        <div class="meta mt-2">Tick the documents you already have.</div>
+                    <% } %>
+                </div>
+
+                <% if (hasDetails) { %>
+                <div class="collapse" id="d<%= index %>">
+                    <div class="details-box">
+                        <% if (scheme.description) { %><p><%= scheme.description %></p><% } %>
+
+                        <div class="row g-4">
+                            <% if (reasons.length) { %>
+                            <div class="col-md-6">
+                                <h3>Why you are eligible</h3>
+                                <ul class="check-list">
+                                    <% reasons.forEach(function (r) { %><li><%= r %></li><% }) %>
+                                </ul>
+                            </div>
+                            <% } %>
+
+                            <% if (steps.length) { %>
+                            <div class="col-md-6">
+                                <h3>How to apply</h3>
+                                <ol class="steps-list">
+                                    <% steps.forEach(function (s) { %><li><%= s %></li><% }) %>
+                                </ol>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+
+                <div class="d-flex flex-wrap gap-2 mt-3 no-print">
+                    <a href="<%= scheme.source_url %>" target="_blank" rel="noopener noreferrer" class="btn btn-apply">View &amp; apply</a>
+                    <% if (hasDetails) { %>
+                        <button class="btn btn-soft" data-bs-toggle="collapse" data-bs-target="#d<%= index %>" aria-expanded="false">Details</button>
+                    <% } %>
+                    <button class="btn btn-soft" data-speak>Listen</button>
+                    <button class="btn btn-soft" data-share>Share on WhatsApp</button>
+                </div>
+            </article>
+        <% }) %>
+        </div>
+
+        <!-- Almost eligible (optional data: near_misses) -->
+        <% if (near.length) { %>
+        <section class="near">
+            <h2 class="h5">Almost eligible</h2>
+            <p class="meta">You narrowly miss these. A small change could unlock them.</p>
+            <% near.forEach(function (n) { %>
+                <div class="mb-2">
+                    <strong><%= n.scheme_name %></strong>
+                    <div class="meta"><%= n.gap || n.reason %></div>
+                </div>
+            <% }) %>
+        </section>
+        <% } %>
+
+        <p class="trust">Always confirm details on the official website before applying. Links open the government source page.</p>
+
+    <% } %>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+    var box = document.getElementById("cards");
+    if (!box) return;
+    var cards = Array.prototype.slice.call(box.querySelectorAll(".scheme-card"));
+
+    // Filters
+    document.querySelectorAll(".fchip").forEach(function (chip) {
+        chip.addEventListener("click", function () {
+            document.querySelectorAll(".fchip").forEach(function (c) { c.classList.remove("active"); });
+            chip.classList.add("active");
+            var f = chip.dataset.filter;
+            cards.forEach(function (c) {
+                var show = f === "all" || c.dataset.level === f || (f === "online" && c.dataset.online === "1");
+                c.style.display = show ? "" : "none";
+            });
+        });
+    });
+
+    // Sorting
+    document.getElementById("sortBy").addEventListener("change", function (e) {
+        var key = e.target.value;
+        cards.sort(function (a, b) { return Number(b.dataset[key]) - Number(a.dataset[key]); })
+             .forEach(function (c) { box.appendChild(c); });
+    });
+
+    // Document readiness
+    document.querySelectorAll("[data-docs]").forEach(function (sec) {
+        var boxes = sec.querySelectorAll("input[type=checkbox]");
+        var out = sec.querySelector("[data-ready]");
+        function update() {
+            var n = sec.querySelectorAll("input:checked").length;
+            out.textContent = "(" + n + " of " + boxes.length + " ready)";
+        }
+        boxes.forEach(function (b) { b.addEventListener("change", update); });
+        update();
+    });
+
+    // Share + listen
+    cards.forEach(function (c) {
+        c.querySelector("[data-share]").addEventListener("click", function () {
+            var docs = [].map.call(c.querySelectorAll(".doc-row"), function (l) { return "- " + l.textContent.trim(); });
+            var text = c.dataset.name + " (" + Number(c.dataset.score).toFixed(0) + "% match)\n" +
+                (docs.length ? "Documents needed:\n" + docs.join("\n") + "\n" : "") + c.dataset.url;
+            window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
+        });
+        c.querySelector("[data-speak]").addEventListener("click", function () {
+            if (!("speechSynthesis" in window)) return;
+            window.speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(c.dataset.name + ". Match score " + Number(c.dataset.score).toFixed(0) + " percent.");
+            u.lang = "en-IN";
+            window.speechSynthesis.speak(u);
+        });
+    });
+})();
+</script>
+</body>
+</html>
