@@ -1,242 +1,340 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find Government Schemes</title>
+    <meta name="description" content="Tell us about yourself and get government schemes you are eligible for.">
 
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+        :root {
+            --ink: #14213d;
+            --ink-soft: #3a4a6b;
+            --saffron: #e8871e;
+            --saffron-dark: #c76d0c;
+            --green: #1f7a4d;
+            --canvas: #eef1f6;
+            --line: #d9dfe9;
+            --muted: #5b6678;
+        }
+
         body {
-            background: #f5f7fb;
+            font-family: "Source Sans 3", system-ui, sans-serif;
+            background: var(--canvas);
+            color: var(--ink);
+            min-height: 100vh;
         }
 
-        .recommendation-container {
-            max-width: 900px;
-            margin: 50px auto;
-        }
+        h1, h2, h3 { font-family: "Bricolage Grotesque", "Source Sans 3", sans-serif; }
 
-        .form-card {
+        .shell {
+            max-width: 1080px;
+            margin: 48px auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(20, 33, 61, .14);
             background: #fff;
-            border-radius: 16px;
-            padding: 35px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
         }
 
-        .form-title {
-            font-weight: 700;
-            margin-bottom: 8px;
+        /* ---------- Left panel ---------- */
+        .intro {
+            background: var(--ink);
+            color: #fff;
+            padding: 44px 36px;
+            height: 100%;
+            position: relative;
+        }
+        .intro::before {
+            content: "";
+            position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+            background: linear-gradient(var(--saffron) 0 33%, #fff 33% 66%, var(--green) 66%);
+        }
+        .intro h1 { font-size: 2rem; line-height: 1.15; margin-bottom: 14px; }
+        .intro p.lead { color: #c3cce0; font-size: 1.02rem; }
+
+        .steps { list-style: none; padding: 0; margin: 32px 0 0; counter-reset: s; }
+        .steps li {
+            counter-increment: s;
+            position: relative;
+            padding-left: 44px;
+            margin-bottom: 22px;
+            color: #dfe5f2;
+        }
+        .steps li strong { display: block; color: #fff; font-weight: 600; }
+        .steps li::before {
+            content: counter(s);
+            position: absolute; left: 0; top: 0;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(232, 135, 30, .18);
+            color: var(--saffron);
+            font-weight: 700; display: grid; place-items: center;
+        }
+        .privacy-note {
+            margin-top: 30px; padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,.15);
+            font-size: .88rem; color: #a9b5cf;
         }
 
-        .form-subtitle {
-            color: #6c757d;
-            margin-bottom: 30px;
+        /* ---------- Form ---------- */
+        .form-pane { padding: 44px 40px; }
+        .form-pane h2 { font-size: 1.5rem; margin-bottom: 4px; }
+        .form-pane .sub { color: var(--muted); margin-bottom: 28px; }
+
+        .group-title {
+            font-family: "Bricolage Grotesque", sans-serif;
+            font-size: 1.02rem; font-weight: 700;
+            margin: 6px 0 14px; padding-bottom: 8px;
+            border-bottom: 1px solid var(--line);
         }
 
-        .form-label {
-            font-weight: 600;
+        .form-label { font-weight: 600; font-size: .93rem; margin-bottom: 6px; }
+        .form-control, .form-select {
+            border-radius: 10px; border-color: var(--line);
+            padding: 10px 14px; min-height: 46px;
         }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 .2rem rgba(232, 135, 30, .22);
+        }
+        .hint { font-size: .82rem; color: var(--muted); margin-top: 5px; min-height: 1.2em; }
+
+        .input-group-text {
+            background: #f7f9fc; border-color: var(--line);
+            border-radius: 10px 0 0 10px; font-weight: 600;
+        }
+        .input-group .form-control { border-radius: 0 10px 10px 0; }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .chip {
+            border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+            border-radius: 999px; padding: 5px 13px; font-size: .84rem; cursor: pointer;
+            transition: background .15s, border-color .15s;
+        }
+        .chip:hover, .chip:focus-visible { background: #fff4e6; border-color: var(--saffron); outline: none; }
+
+        .toggle-card {
+            display: flex; align-items: center; gap: 12px;
+            border: 1px solid var(--line); border-radius: 12px;
+            padding: 12px 14px; cursor: pointer; height: 100%;
+            transition: border-color .15s, background .15s;
+        }
+        .toggle-card:hover { border-color: var(--saffron); }
+        .toggle-card input { width: 1.15em; height: 1.15em; accent-color: var(--saffron-dark); margin: 0; }
+        .toggle-card:has(input:checked) { background: #fff4e6; border-color: var(--saffron); }
+        .toggle-card span { font-weight: 600; font-size: .93rem; }
 
         .btn-recommend {
-            width: 100%;
-            padding: 13px;
-            font-weight: 600;
-            border-radius: 10px;
+            background: var(--saffron); border: 0; color: #1d1203;
+            font-weight: 700; font-size: 1.05rem;
+            padding: 14px; border-radius: 12px; width: 100%;
+            transition: background .15s;
         }
+        .btn-recommend:hover, .btn-recommend:focus-visible { background: var(--saffron-dark); color: #fff; }
+        .btn-recommend:disabled { opacity: .8; cursor: progress; }
+
+        .alert-danger { border-radius: 12px; }
+
+        @media (max-width: 991px) {
+            .shell { margin: 0; border-radius: 0; }
+            .intro { padding: 32px 24px 28px 30px; }
+            .steps, .privacy-note { display: none; }
+            .form-pane { padding: 28px 22px; }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
 </head>
 
 <body>
 
-<div class="container recommendation-container">
+<main class="shell">
+    <div class="row g-0">
 
-    <div class="form-card">
+        <!-- Left: context -->
+        <aside class="col-lg-4">
+            <div class="intro">
+                <h1>Find the schemes you qualify for</h1>
+                <p class="lead">
+                    Share a few details and describe what you need. We match you with central and state government schemes.
+                </p>
 
-        <h2 class="form-title">Find Government Schemes</h2>
+                <ol class="steps">
+                    <li><strong>Tell us about you</strong>State, age, category and family income.</li>
+                    <li><strong>Describe your need</strong>In your own words, like “loan to start a shop”.</li>
+                    <li><strong>Get matched schemes</strong>See benefits and eligibility for each.</li>
+                </ol>
 
-        <p class="form-subtitle">
-            Enter your details to find government schemes that match your eligibility.
-        </p>
-
-        <% if (typeof error !== "undefined" && error) { %>
-            <div class="alert alert-danger">
-                <%= error %>
+                <p class="privacy-note">
+                    Your details are used only to find matching schemes. No Aadhaar or contact information is asked.
+                </p>
             </div>
-        <% } %>
+        </aside>
 
-        <form action="/recommend" method="POST">
+        <!-- Right: form -->
+        <section class="col-lg-8 form-pane">
 
-            <div class="row g-4">
+            <h2>Your details</h2>
+            <p class="sub">All fields are required unless marked optional.</p>
 
-                <!-- State -->
-                <div class="col-md-6">
-                    <label class="form-label">State</label>
-                    <select name="state" class="form-select" required>
-                        <option value="">Select State</option>
-                        <option value="Andhra Pradesh">Andhra Pradesh</option>
-                        <option value="Assam">Assam</option>
-                        <option value="Bihar">Bihar</option>
-                        <option value="Chhattisgarh">Chhattisgarh</option>
-                        <option value="Delhi">Delhi</option>
-                        <option value="Gujarat">Gujarat</option>
-                        <option value="Haryana">Haryana</option>
-                        <option value="Himachal Pradesh">Himachal Pradesh</option>
-                        <option value="Jharkhand">Jharkhand</option>
-                        <option value="Karnataka">Karnataka</option>
-                        <option value="Kerala">Kerala</option>
-                        <option value="Madhya Pradesh">Madhya Pradesh</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Odisha">Odisha</option>
-                        <option value="Punjab">Punjab</option>
-                        <option value="Rajasthan">Rajasthan</option>
-                        <option value="Tamil Nadu">Tamil Nadu</option>
-                        <option value="Telangana">Telangana</option>
-                        <option value="Uttar Pradesh">Uttar Pradesh</option>
-                        <option value="Uttarakhand">Uttarakhand</option>
-                        <option value="West Bengal">West Bengal</option>
-                    </select>
+            <% if (typeof error !== "undefined" && error) { %>
+                <div class="alert alert-danger" role="alert">
+                    <%= error %>
                 </div>
+            <% } %>
 
-                <!-- Gender -->
-                <div class="col-md-6">
-                    <label class="form-label">Gender</label>
-                    <select name="gender" class="form-select" required>
-                        <option value="">Select Gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </div>
+            <form action="/recommend" method="POST" id="schemeForm" novalidate>
 
-                <!-- Social Category -->
-                <div class="col-md-6">
-                    <label class="form-label">Social Category</label>
-                    <select name="social_cat" class="form-select" required>
-                        <option value="General">General</option>
-                        <option value="SC">SC</option>
-                        <option value="ST">ST</option>
-                        <option value="OBC">OBC</option>
-                    </select>
-                </div>
+                <div class="group-title">Personal profile</div>
+                <div class="row g-3 mb-4">
 
-                <!-- Age -->
-                <div class="col-md-6">
-                    <label class="form-label">Age</label>
-                    <input
-                        type="number"
-                        name="age"
-                        class="form-control"
-                        min="1"
-                        max="100"
-                        placeholder="Enter your age"
-                        required
-                    >
-                </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="state">State / UT</label>
+                        <select name="state" id="state" class="form-select" required>
+                            <option value="">Select state</option>
+                            <% [
+                                "Andaman and Nicobar Islands","Andhra Pradesh","Arunachal Pradesh","Assam","Bihar",
+                                "Chandigarh","Chhattisgarh","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh",
+                                "Jammu and Kashmir","Jharkhand","Karnataka","Kerala","Ladakh","Madhya Pradesh",
+                                "Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Puducherry",
+                                "Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh",
+                                "Uttarakhand","West Bengal"
+                            ].forEach(function (s) { %>
+                                <option value="<%= s %>"><%= s %></option>
+                            <% }); %>
+                        </select>
+                    </div>
 
-                <!-- Income -->
-                <div class="col-md-6">
-                    <label class="form-label">Annual Family Income (₹)</label>
-                    <input
-                        type="number"
-                        name="income"
-                        class="form-control"
-                        min="0"
-                        placeholder="Enter annual income"
-                        required
-                    >
-                </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="gender">Gender</label>
+                        <select name="gender" id="gender" class="form-select" required>
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
 
-                <!-- Need -->
-                <div class="col-12">
-                    <label class="form-label">What do you need?</label>
-                    <textarea
-                        name="need"
-                        class="form-control"
-                        rows="4"
-                        placeholder="Example: I need a loan subsidy to start a small business"
-                        required
-                    ></textarea>
-                </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="social_cat">Social category</label>
+                        <select name="social_cat" id="social_cat" class="form-select" required>
+                            <option value="General">General</option>
+                            <option value="SC">SC</option>
+                            <option value="ST">ST</option>
+                            <option value="OBC">OBC</option>
+                        </select>
+                    </div>
 
-                <!-- Additional Eligibility -->
-                <div class="col-12">
+                    <div class="col-md-6">
+                        <label class="form-label" for="age">Age</label>
+                        <input type="number" name="age" id="age" class="form-control"
+                               min="1" max="100" placeholder="e.g. 28" required>
+                    </div>
 
-                    <label class="form-label mb-3">
-                        Additional Eligibility
-                    </label>
-
-                    <div class="row">
-
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    name="minority"
-                                    value="true"
-                                    id="minority"
-                                >
-                                <label class="form-check-label" for="minority">
-                                    Minority
-                                </label>
-                            </div>
+                    <div class="col-12">
+                        <label class="form-label" for="income">Annual family income</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" name="income" id="income" class="form-control"
+                                   min="0" placeholder="e.g. 250000" required>
                         </div>
-
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    name="disability"
-                                    value="true"
-                                    id="disability"
-                                >
-                                <label class="form-check-label" for="disability">
-                                    Person with Disability
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input
-                                    class="form-check-input"
-                                    type="checkbox"
-                                    name="bpl"
-                                    value="true"
-                                    id="bpl"
-                                >
-                                <label class="form-check-label" for="bpl">
-                                    BPL
-                                </label>
-                            </div>
-                        </div>
-
+                        <div class="hint" id="incomeHint" aria-live="polite"></div>
                     </div>
                 </div>
 
-                <!-- Submit -->
-                <div class="col-12 mt-4">
-                    <button
-                        type="submit"
-                        class="btn btn-primary btn-recommend"
-                    >
-                        Find Suitable Schemes
-                    </button>
+                <div class="group-title">Additional eligibility <span class="text-muted fw-normal">(optional)</span></div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="toggle-card" for="minority">
+                            <input type="checkbox" name="minority" value="true" id="minority">
+                            <span>Minority</span>
+                        </label>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="toggle-card" for="disability">
+                            <input type="checkbox" name="disability" value="true" id="disability">
+                            <span>Person with disability</span>
+                        </label>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="toggle-card" for="bpl">
+                            <input type="checkbox" name="bpl" value="true" id="bpl">
+                            <span>Below Poverty Line</span>
+                        </label>
+                    </div>
                 </div>
 
-            </div>
+                <div class="group-title">What do you need?</div>
+                <div class="mb-4">
+                    <label class="form-label visually-hidden" for="need">Your need</label>
+                    <textarea name="need" id="need" class="form-control" rows="4" maxlength="400"
+                              placeholder="Example: I need a loan subsidy to start a small business" required></textarea>
+                    <div class="d-flex justify-content-between">
+                        <div class="hint">Be specific for better matches.</div>
+                        <div class="hint"><span id="needCount">0</span>/400</div>
+                    </div>
+                    <div class="chips" aria-label="Example needs">
+                        <button type="button" class="chip" data-fill="I need a loan subsidy to start a small business">Business loan</button>
+                        <button type="button" class="chip" data-fill="I need a scholarship for higher education">Scholarship</button>
+                        <button type="button" class="chip" data-fill="I need affordable housing support for my family">Housing</button>
+                        <button type="button" class="chip" data-fill="I need health insurance coverage for my family">Health cover</button>
+                        <button type="button" class="chip" data-fill="I am a farmer looking for crop and equipment support">Farming</button>
+                    </div>
+                </div>
 
-        </form>
+                <button type="submit" class="btn btn-recommend" id="submitBtn">
+                    Find suitable schemes
+                </button>
+            </form>
 
+        </section>
     </div>
+</main>
 
-</div>
+<script>
+    (function () {
+        var form = document.getElementById("schemeForm");
+        var btn = document.getElementById("submitBtn");
+        var need = document.getElementById("need");
+        var count = document.getElementById("needCount");
+        var income = document.getElementById("income");
+        var incomeHint = document.getElementById("incomeHint");
+
+        // Live income in Indian format
+        income.addEventListener("input", function () {
+            var v = Number(income.value);
+            incomeHint.textContent = income.value !== "" && v >= 0
+                ? "₹" + v.toLocaleString("en-IN") + " per year"
+                : "";
+        });
+
+        // Character counter
+        need.addEventListener("input", function () { count.textContent = need.value.length; });
+
+        // Example chips
+        document.querySelectorAll(".chip").forEach(function (chip) {
+            chip.addEventListener("click", function () {
+                need.value = chip.dataset.fill;
+                need.dispatchEvent(new Event("input"));
+                need.focus();
+            });
+        });
+
+        // Validate + loading state
+        form.addEventListener("submit", function (e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                form.classList.add("was-validated");
+                form.reportValidity();
+                return;
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Finding schemes…';
+        });
+    })();
+</script>
 
 </body>
 </html>
-
