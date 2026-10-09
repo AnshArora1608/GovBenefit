@@ -1,88 +1,162 @@
 
 const { spawn } = require("child_process");
 const path = require("path");
+const fs = require("fs");
 
-const pythonScript = path.resolve(
+const PYTHON_PATH = process.env.PYTHON_BIN || "python";
+
+const PYTHON_SCRIPT = path.resolve(
     __dirname,
     "..",
-    "ml",
-    "recommend_service.py"
+    "ml1",
+    "recommend_cli.py"
 );
 
-function getRecommendations(data) {
+const TIMEOUT_MS = 60000;
+
+function getRecommendations(userData) {
     return new Promise((resolve, reject) => {
+        if (!fs.existsSync(PYTHON_SCRIPT)) {
+            return reject(
+                new Error(
+                    `Python script not found: ${PYTHON_SCRIPT}`
+                )
+            );
+        }
+
         const python = spawn(
-            "python",
-            [pythonScript],
+            PYTHON_PATH,
+            ["-u", PYTHON_SCRIPT],
             {
-                cwd: path.dirname(pythonScript),
+                cwd: path.dirname(PYTHON_SCRIPT),
                 windowsHide: true
             }
         );
 
-        let stdout = "";
-        let stderr = "";
+        let output = "";
+        let errorOutput = "";
+        let settled = false;
+
+        const timer = setTimeout(() => {
+            python.kill();
+
+            finish(
+                new Error(
+                    "Python recommendation service timed out."
+                )
+            );
+        }, TIMEOUT_MS);
+
+        function finish(error, result) {
+            if (settled) return;
+
+            settled = true;
+            clearTimeout(timer);
+
+            if (error) {
+                reject(error);
+            } else {
+                resolve(result);
+            }
+        }
 
         python.stdout.setEncoding("utf8");
         python.stderr.setEncoding("utf8");
 
         python.stdout.on("data", (chunk) => {
-            stdout += chunk;
+            output += chunk;
         });
 
         python.stderr.on("data", (chunk) => {
-            stderr += chunk;
+            errorOutput += chunk;
         });
 
         python.on("error", (error) => {
-            reject(
-                new Error(`Unable to start Python: ${error.message}`)
+            finish(
+                new Error(
+                    `Unable to start Python (${PYTHON_PATH}): ${error.message}`
+                )
             );
         });
 
         python.on("close", (code) => {
+            if (settled) return;
+
             if (code !== 0) {
-                return reject(
+                return finish(
                     new Error(
-                        stderr.trim() ||
-                        `Python exited with code ${code}`
+                        errorOutput.trim() ||
+                        `Python exited with code ${code}.`
                     )
                 );
             }
 
-            const response = stdout.trim();
+            const response = output.trim();
 
             if (!response) {
-                return reject(
+                return finish(
                     new Error(
-                        `Python returned empty output.\nPython stderr: ${stderr}`
+                        "Python returned empty output." +
+                        (errorOutput.trim()
+                            ? `\n${errorOutput.trim()}`
+                            : "")
                     )
                 );
             }
 
+            let result;
+
             try {
-                const result = JSON.parse(response);
-
-                if (result && result.error) {
-                    return reject(new Error(result.error));
-                }
-
-                resolve(result);
+                result = JSON.parse(response);
             } catch (error) {
-                reject(
+                return finish(
                     new Error(
-                        `Python returned invalid JSON:\n${response}\n\nPython stderr:\n${stderr}`
+                        `Invalid JSON from Python: ${error.message}\n` +
+                        `Output: ${response}\n` +
+                        `Python stderr: ${errorOutput.trim()}`
+                    )
+                );
+            }
+
+            if (
+                result === null ||
+                typeof result !== "object"
+            ) {
+                return finish(
+                    new Error(
+                        "Python returned an unexpected response format."
+                    )
+                );
+            }
+
+            if (result.error) {
+                return finish(new Error(result.error));
+            }
+
+            finish(null, result);
+        });
+
+        python.stdin.on("error", (error) => {
+            if (error.code !== "EPIPE") {
+                finish(
+                    new Error(
+                        `Failed to send input to Python: ${error.message}`
                     )
                 );
             }
         });
 
-        python.stdin.write(JSON.stringify(data));
-        python.stdin.end();
+        try {
+            python.stdin.end(
+                JSON.stringify(userData ?? {})
+            );
+        } catch (error) {
+            python.kill();
+            finish(error);
+        }
     });
 }
 
 module.exports = {
     getRecommendations
 };
-

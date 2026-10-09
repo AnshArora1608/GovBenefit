@@ -1,125 +1,244 @@
+
+const fs = require("fs");
 const path = require("path");
+
 const { getRecommendations } = require("../services/python_services");
-const { loadDocsLookup, attachDocuments } = require("../services/documentService");
-const { loadDatesLookup, attachDates } = require("../services/dateservice");
+const {
+    loadDocsLookup,
+    attachDocuments
+} = require("../services/documentService");
+const {
+    loadDatesLookup,
+    attachDates
+} = require("../services/dateService");
 const { expandNeed } = require("../services/needTranslator");
 
-// Absolute path, so it works no matter which folder the server is started from
-const CSV_PATH = path.join(__dirname, "..", "ml", "schemes_clean.csv");
+const DATA_PATHS = [
+    path.resolve(__dirname, "..", "ml1", "schemes_clean.csv"),
+    path.resolve(__dirname, "..", "ml", "schemes_clean.csv")
+];
 
-// "always": only entrepreneur schemes for every user (your current behaviour)
-// "auto"  : only when the user's need talks about business, loan, startup, etc.
-const ENTREPRENEUR_MODE = "always";
-const BUSINESS_WORDS = /business|startup|start-up|entrepreneur|self.?employ|msme|enterprise|shop|udyam|loan|व्यापार|कारोबार|स्वरोजगार|उद्यम|दुकान/i;
+const CSV_PATH = DATA_PATHS.find(file => fs.existsSync(file));
 
-// Load CSV data once. If the file is missing, the app still starts (documents / dates will be empty)
+const ENTREPRENEUR_MODE = "auto";
+
+const BUSINESS_WORDS =
+    /business|startup|start-up|entrepreneur|self.?employ|msme|enterprise|shop|udyam|loan|व्यापार|कारोबार|स्वरोजगार|उद्यम|दुकान/i;
+
 function safeLoad(loader, label) {
+    if (!CSV_PATH) {
+        console.error(
+            `[${label}] schemes_clean.csv not found in ml1 or ml.`
+        );
+        return new Map();
+    }
+
     try {
-        return loader(CSV_PATH);
-    } catch (e) {
-        console.error(`[${label}] Could not load ${CSV_PATH}: ${e.message}`);
+        return loader(CSV_PATH) || new Map();
+    } catch (error) {
+        console.error(
+            `[${label}] Failed to load CSV: ${error.message}`
+        );
         return new Map();
     }
 }
-const docsLookup = safeLoad(loadDocsLookup, "documents");
-const datesLookup = safeLoad(loadDatesLookup, "dates");
+
+const docsLookup = safeLoad(loadDocsLookup, "Documents");
+const datesLookup = safeLoad(loadDatesLookup, "Dates");
+
+function parseBoolean(value) {
+    if (typeof value === "boolean") return value;
+
+    return ["true", "1", "yes", "on"].includes(
+        String(value ?? "").trim().toLowerCase()
+    );
+}
 
 function parseForm(body) {
+    const state = String(body.state || "").trim();
+    const gender = String(body.gender || "").trim();
     const need = String(body.need || "").trim();
+
     const age = Number(body.age);
     const income = Number(body.income);
 
-    if (!body.state || !body.gender || !need) {
-        return { error: "Please fill in all the required fields." };
-    }
-    if (!Number.isFinite(age) || age < 1 || age > 100) {
-        return { error: "Please enter a valid age between 1 and 100." };
-    }
-    if (body.income === "" || !Number.isFinite(income) || income < 0) {
-        return { error: "Please enter a valid annual family income." };
+    if (!state || !gender || !need) {
+        return {
+            error: "Please fill in all required fields."
+        };
     }
 
-    // Hindi / Hinglish words are turned into English keywords, so the trained TF-IDF can match them
-    const expanded = expandNeed(need);
+    if (!Number.isFinite(age) || age < 1 || age > 100) {
+        return {
+            error: "Please enter a valid age between 1 and 100."
+        };
+    }
+
+    if (
+        body.income === undefined ||
+        String(body.income).trim() === "" ||
+        !Number.isFinite(income) ||
+        income < 0
+    ) {
+        return {
+            error: "Please enter a valid annual family income."
+        };
+    }
+
+    let expanded;
+
+    try {
+        expanded = expandNeed(need);
+    } catch (error) {
+        console.error("Need translation error:", error.message);
+
+        return {
+            error: "Unable to process your requirement. Please try again."
+        };
+    }
+
+    if (!expanded || typeof expanded.text !== "string") {
+        return {
+            error: "Unable to understand your requirement. Please rephrase it."
+        };
+    }
+
+    const entrepreneurOnly =
+        ENTREPRENEUR_MODE === "always" ||
+        (
+            ENTREPRENEUR_MODE === "auto" &&
+            BUSINESS_WORDS.test(need)
+        );
 
     return {
-        keywords: expanded.keywords,
+        keywords: expanded.keywords || [],
+
         data: {
-            state: body.state,
-            gender: body.gender,
-            social_cat: body.social_cat,
-            minority: body.minority === "true",
-            disability: body.disability === "true",
-            bpl: body.bpl === "true",
+            state,
+            gender,
+            social_cat: String(body.social_cat || "General").trim(),
+            minority: parseBoolean(body.minority),
+            disability: parseBoolean(body.disability),
+            bpl: parseBoolean(body.bpl),
             age,
             income,
             need: expanded.text,
             top: 10,
-            entrepreneur_only: ENTREPRENEUR_MODE === "always" ? true : BUSINESS_WORDS.test(need)
+            entrepreneur_only: entrepreneurOnly
         }
     };
 }
 
-// Python may return an array or an object like { recommendations: [...] }
 function toList(result) {
-    if (Array.isArray(result)) return result;
-    if (result && Array.isArray(result.recommendations)) return result.recommendations;
-    if (result && Array.isArray(result.results)) return result.results;
+    if (Array.isArray(result)) {
+        return result;
+    }
+
+    if (result && Array.isArray(result.recommendations)) {
+        return result.recommendations;
+    }
+
+    if (result && Array.isArray(result.results)) {
+        return result.results;
+    }
+
     return [];
 }
 
-// The page expects score as 0 to 100. If Python sends 0 to 1, convert it.
 function normaliseScores(list) {
-    const max = Math.max(0, ...list.map(s => Number(s.score) || 0));
+    const scores = list.map(item => Number(item.score) || 0);
+
+    const max = scores.length ? Math.max(...scores) : 0;
+
     if (max > 0 && max <= 1) {
-        return list.map(s => Object.assign({}, s, { score: (Number(s.score) || 0) * 100 }));
+        return list.map(item => ({
+            ...item,
+            score: (Number(item.score) || 0) * 100
+        }));
     }
+
     return list;
 }
 
 const showRecommendationForm = (req, res) => {
-    res.render("recommendation", { error: null });
+    return res.render("recommendation", {
+        error: null
+    });
 };
 
 const getRecommendationsController = async (req, res) => {
-    const parsed = parseForm(req.body || {});
+    const body = req.body || {};
+    const parsed = parseForm(body);
+
     if (parsed.error) {
-        return res.status(400).render("recommendation", { error: parsed.error });
+        return res.status(400).render("recommendation", {
+            error: parsed.error
+        });
     }
 
     try {
-        console.log("Form Data:", parsed.data);
-
-        // 1. Recommendations from Python
-        const result = await getRecommendations(parsed.data);
-        if (result && result.error) {
-            console.error("Python error:", result.error);
-            return res.status(502).render("recommendation", {
-                error: "The recommendation engine is not responding right now. Please try again."
-            });
+        if (!CSV_PATH) {
+            throw new Error(
+                "schemes_clean.csv was not found in ml1 or ml."
+            );
         }
-        const list = normaliseScores(toList(result));
 
-        // 2. Documents (from dataset + user's profile), then start / end dates
-        const withDocs = attachDocuments(list, req.body, docsLookup);
-        const schemes = attachDates(withDocs.schemes, datesLookup);
+        console.log("Recommendation request received:", {
+            state: parsed.data.state,
+            age: parsed.data.age,
+            entrepreneur_only: parsed.data.entrepreneur_only
+        });
+
+        const result = await getRecommendations(parsed.data);
+        const recommendations = toList(result);
+
+        const scoredRecommendations = normaliseScores(
+            recommendations
+        );
+
+        const withDocs = attachDocuments(
+            scoredRecommendations,
+            body,
+            docsLookup
+        );
+
+        if (!withDocs || !Array.isArray(withDocs.schemes)) {
+            throw new Error(
+                "Document service returned an invalid response."
+            );
+        }
+
+        const schemes = attachDates(
+            withDocs.schemes,
+            datesLookup
+        );
 
         console.log(
-            `Schemes: ${schemes.length} | with documents: ${schemes.filter(s => !s.docs_fallback).length}` +
-            ` | with end date: ${schemes.filter(s => s.end_date).length}`
+            `Recommendations: ${schemes.length} | ` +
+            `Documents attached: ${
+                schemes.filter(s => !s.docs_fallback).length
+            } | ` +
+            `Schemes with end dates: ${
+                schemes.filter(s => s.end_date).length
+            }`
         );
 
         return res.render("recommendations", {
             recommendations: schemes,
-            master_docs: withDocs.master,
+            master_docs: withDocs.master || [],
             need_keywords: parsed.keywords,
-            profile: req.body
+            profile: body
         });
 
     } catch (error) {
-        console.error("Recommendation Error:", error);
+        console.error(
+            "Recommendation controller error:",
+            error.stack || error.message
+        );
+
         return res.status(500).render("recommendation", {
-            error: "Something went wrong while finding schemes. Please try again."
+            error:
+                "Something went wrong while finding schemes. Please try again."
         });
     }
 };
@@ -128,3 +247,4 @@ module.exports = {
     showRecommendationForm,
     getRecommendationsController
 };
+

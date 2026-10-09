@@ -1,20 +1,20 @@
 {
-  "lastUpdated": "2026-10-09T22:26:35.749Z",
+  "lastUpdated": "2026-10-09T22:47:16.410Z",
   "user": {
     "id": "usr_1791574615748",
-    "updatedAt": "2026-10-09T22:26:35.749Z",
+    "updatedAt": "2026-10-09T22:47:16.410Z",
     "personal": {
       "fullName": "Ramesh Kumar",
       "guardianName": "Suresh Kumar",
       "dob": "1995-05-15",
-      "age": 25,
+      "age": 20,
       "gender": "female",
       "maritalStatus": "Married"
     },
     "contact": {
       "mobile": "9876543210",
       "email": "ramesh@example.com",
-      "state": "Jharkhand",
+      "state": "Chandigarh",
       "district": "Jaipur",
       "cityVillage": "Amer",
       "pincode": "302001",
@@ -22,7 +22,7 @@
       "areaType": "Rural"
     },
     "demographics": {
-      "socialCat": "SC",
+      "socialCat": "OBC",
       "minority": false,
       "minorityCommunity": "",
       "disability": false,
@@ -34,7 +34,7 @@
     "educationOccupation": {
       "education": "Graduate",
       "occupation": "Farmer",
-      "income": 15000,
+      "income": 120000,
       "incomeCertNo": ""
     },
     "bankIdentity": {
@@ -47,6 +47,13 @@
     }
   },
   "applications": [
+    {
+      "id": "app_1791586036411",
+      "scheme_name": "National Scholarship For Post Graduate Studies",
+      "scheme_url": "https://www.myscheme.gov.in/schemes/nsfpgs",
+      "status": "Profile Saved - Ready to Apply",
+      "appliedAt": "2026-10-09T22:47:16.410Z"
+    },
     {
       "id": "app_1791574883106",
       "scheme_name": "Micro Credit Finance (NSFDC)",
