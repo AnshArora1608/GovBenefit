@@ -197,7 +197,13 @@
         <!-- Right: form -->
         <section class="col-lg-8 form-pane">
 
-            <h2>Your details</h2>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                <h2 class="mb-0">Your details</h2>
+                <div class="d-flex gap-2">
+                    <a href="/dashboard" class="btn btn-sm btn-outline-secondary">📊 Dashboard</a>
+                    <a href="/wishlist" class="btn btn-sm btn-outline-secondary">⭐ Wishlist</a>
+                </div>
+            </div>
             <p class="sub">All fields are required unless marked optional.</p>
 
             <% if (typeof error !== "undefined" && error) { %>
@@ -346,46 +352,403 @@
 </main>
 
 <script>
-    (function () {
-        var form = document.getElementById("schemeForm");
-        var btn = document.getElementById("submitBtn");
-        var need = document.getElementById("need");
-        var count = document.getElementById("needCount");
-        var income = document.getElementById("income");
-        var incomeHint = document.getElementById("incomeHint");
+(function () {
+    "use strict";
 
-        // Live income in Indian format
-        income.addEventListener("input", function () {
-            var v = Number(income.value);
-            incomeHint.textContent = income.value !== "" && v >= 0
-                ? "₹" + v.toLocaleString("en-IN") + " per year"
-                : "";
+    /* ------------------------------------------------------------------ *
+     *  Bilingual messages.
+     *  Language comes from the same toggle the voice panel uses
+     *  (localStorage key "schemeLang", values "hi-IN" / "en-IN").
+     * ------------------------------------------------------------------ */
+    var MSG = {
+        ageRequired: {
+            en: "Please enter your age.",
+            hi: "कृपया अपनी उम्र दर्ज करें।"
+        },
+        ageWhole: {
+            en: "Age must be a whole number, without decimals.",
+            hi: "उम्र पूर्ण संख्या में होनी चाहिए, दशमलव के बिना।"
+        },
+        ageRange: {
+            en: "Age must be between 1 and 120.",
+            hi: "उम्र 1 से 120 के बीच होनी चाहिए।"
+        },
+        ageCheck: {
+            en: "Please check the age you entered.",
+            hi: "कृपया दर्ज की गई उम्र जाँच लें।"
+        },
+        incomeRequired: {
+            en: "Please enter your annual family income.",
+            hi: "कृपया अपने परिवार की सालाना आमदनी दर्ज करें।"
+        },
+        incomeInvalid: {
+            en: "Please enter a valid number, for example 250000.",
+            hi: "कृपया सही संख्या दर्ज करें, जैसे 250000।"
+        },
+        incomeNegative: {
+            en: "Income cannot be negative.",
+            hi: "आमदनी ऋणात्मक नहीं हो सकती।"
+        },
+        incomeMonthly: {
+            en: "Is this monthly? Enter the yearly amount.",
+            hi: "क्या यह मासिक है? सालाना राशि दर्ज करें।"
+        },
+        needRequired: {
+            en: "Please describe what you need.",
+            hi: "कृपया बताएँ कि आपको क्या चाहिए।"
+        },
+        selectRequired: {
+            en: "Please choose an option.",
+            hi: "कृपया एक विकल्प चुनें।"
+        }
+    };
+
+    function activeLang() {
+        var l = "hi-IN";
+        try { l = localStorage.getItem("schemeLang") || l; } catch (e) {}
+        return l.indexOf("hi") === 0 ? "hi" : "en";
+    }
+    function t(key) {
+        var m = MSG[key];
+        return m ? m[activeLang()] : "";
+    }
+
+    /* ------------------------------------------------------------------ *
+     *  Helpers
+     * ------------------------------------------------------------------ */
+    function $(id) { return document.getElementById(id); }
+
+    function setHint(el, text, isError) {
+        if (!el) return;
+        el.textContent = text || "";
+        el.classList.toggle("text-danger", !!isError);
+    }
+
+    function stripMoney(raw) {
+        return String(raw == null ? "" : raw)
+            .replace(/[₹,\s\u00A0]/g, "")
+            .trim();
+    }
+
+    /* Mark a field as touched so we only show errors after the user
+       has actually interacted with it. */
+    function markTouched(el) {
+        if (el) el.dataset.touched = "1";
+    }
+    function isTouched(el) {
+        return !!(el && el.dataset.touched === "1");
+    }
+
+    /* Apply visual valid/invalid state on a field (Bootstrap-style). */
+    function paint(el, ok) {
+        if (!el) return;
+        if (!isTouched(el)) return;
+        el.classList.toggle("is-invalid", !ok);
+        el.classList.toggle("is-valid", ok);
+    }
+
+     Validators
+    function validateAge(raw) {
+    var s = String(raw == null ? "" : raw).trim();
+    if (s === "") return { ok: false, msgKey: "ageRequired" };
+    if (/^\d+\.\d+$/.test(s)) return { ok: false, msgKey: "ageWhole" };
+    if (!/^\d+$/.test(s)) return { ok: false, msgKey: "ageRange" };
+    var n = Number(s);
+    if (!isFinite(n) || n < 18 || n > 100) return { ok: false, msgKey: "ageRange" };
+    return { ok: true, value: n, warnKey: null };
+}
+
+    function validateIncome(raw) {
+        var s = stripMoney(raw);
+        if (s === "") return { ok: false, msgKey: "incomeRequired" };
+        if (!/^[+-]?(\d+(\.\d+)?|\.\d+)$/.test(s)) return { ok: false, msgKey: "incomeInvalid" };
+        var n = Number(s);
+        if (!isFinite(n)) return { ok: false, msgKey: "incomeInvalid" };
+        if (n < 0) return { ok: false, msgKey: "incomeNegative" };
+        return { ok: true, value: n, warnKey: n > 0 && n < 12000 ? "incomeMonthly" : null };
+    }
+
+    function validateNeed(raw) {
+        var s = String(raw == null ? "" : raw).trim();
+        if (s === "") return { ok: false, msgKey: "needRequired" };
+        return { ok: true, value: s };
+    }
+
+    function validateSelect(el) {
+        if (!el) return { ok: true };
+        return el.value ? { ok: true } : { ok: false, msgKey: "selectRequired" };
+    }
+
+    /* ------------------------------------------------------------------ *
+     *  Per-field UI refreshers (used by blur + input)
+     * ------------------------------------------------------------------ */
+    function refreshAge(showErrors) {
+        var ageEl = $("age");
+        if (!ageEl) return true;
+        var r = validateAge(ageEl.value);
+        ageEl.setCustomValidity(r.ok ? "" : t(r.msgKey));
+
+        var hint = $("ageHint");
+        if (hint) {
+            if (!r.ok && (showErrors || isTouched(ageEl))) {
+                setHint(hint, t(r.msgKey), true);
+            } else if (r.ok && r.warnKey) {
+                setHint(hint, t(r.warnKey), true);
+            } else {
+                setHint(hint, "", false);
+            }
+        }
+        paint(ageEl, r.ok);
+        return r.ok;
+    }
+
+    function refreshIncome(showErrors) {
+        var incomeEl = $("income");
+        var incomeHint = $("incomeHint");
+        if (!incomeEl) return true;
+        var r = validateIncome(incomeEl.value);
+        incomeEl.setCustomValidity(r.ok ? "" : t(r.msgKey));
+
+        if (incomeHint) {
+            if (incomeEl.value.trim() === "") {
+                setHint(incomeHint, (showErrors || isTouched(incomeEl)) ? t(r.msgKey) : "", !r.ok);
+            } else if (!r.ok && (showErrors || isTouched(incomeEl))) {
+                setHint(incomeHint, t(r.msgKey), true);
+            } else if (r.ok && r.warnKey) {
+                setHint(incomeHint, "₹" + r.value.toLocaleString("en-IN") + " — " + t(r.warnKey), true);
+            } else if (r.ok) {
+                setHint(incomeHint, "₹" + r.value.toLocaleString("en-IN") +
+                    (activeLang() === "hi" ? " प्रति वर्ष" : " per year"), false);
+            } else {
+                setHint(incomeHint, "", false);
+            }
+        }
+        paint(incomeEl, r.ok);
+        return r.ok;
+    }
+
+    function refreshNeed(showErrors) {
+        var needEl = $("need");
+        if (!needEl) return true;
+        var r = validateNeed(needEl.value);
+        needEl.setCustomValidity(r.ok ? "" : t(r.msgKey));
+
+        var hint = $("needHint");
+        if (hint) {
+            setHint(hint, (!r.ok && (showErrors || isTouched(needEl))) ? t(r.msgKey) : "", !r.ok);
+        }
+        paint(needEl, r.ok);
+        return r.ok;
+    }
+
+    function refreshSelect(el, showErrors) {
+        if (!el) return true;
+        var r = validateSelect(el);
+        el.setCustomValidity(r.ok ? "" : t(r.msgKey));
+        if (!r.ok && (showErrors || isTouched(el))) {
+            el.classList.add("is-invalid");
+        } else if (r.ok) {
+            el.classList.remove("is-invalid");
+            if (isTouched(el)) el.classList.add("is-valid");
+        }
+        return r.ok;
+    }
+
+    /* ------------------------------------------------------------------ *
+     *  Wire up
+     * ------------------------------------------------------------------ */
+    var form = $("schemeForm");
+    if (!form) return;
+
+    var ageEl = $("age");
+    var incomeEl = $("income");
+    var needEl = $("need");
+    var needCount = $("needCount");
+    var submitBtn = $("submitBtn");
+
+    /* Insert lightweight hint elements if the markup doesn't already
+       have them, so age and need get inline feedback too. */
+    function ensureHint(inputId, hintId, afterEl) {
+        if ($(hintId) || !afterEl) return;
+        var h = document.createElement("div");
+        h.className = "hint";
+        h.id = hintId;
+        h.setAttribute("aria-live", "polite");
+        afterEl.parentNode.insertBefore(h, afterEl.nextSibling);
+    }
+    ensureHint("age", "ageHint", ageEl);
+    ensureHint("need", "needHint", needEl && needEl.parentNode ? needEl : null);
+    // For need, the hint should sit after the counter row, not inside it.
+    (function placeNeedHint() {
+        var h = $("needHint");
+        if (!h || !needEl) return;
+        var counterRow = needEl.parentNode &&
+            needEl.parentNode.querySelector(".d-flex.justify-content-between");
+        if (counterRow && counterRow.parentNode) {
+            counterRow.parentNode.insertBefore(h, counterRow.nextSibling);
+        }
+    })();
+
+    /* ---- AGE: validate live as they type (soft), strongly on blur ---- */
+    if (ageEl) {
+        ageEl.addEventListener("input", function () {
+            // Only paint while typing; don't nag with the "required" message
+            // before they've had a chance to finish.
+            if (ageEl.value.trim() !== "") {
+                refreshAge(false);
+            } else if (isTouched(ageEl)) {
+                refreshAge(true);
+            }
         });
+        ageEl.addEventListener("blur", function () {
+            markTouched(ageEl);
+            refreshAge(true);
+        });
+    }
 
-        // Character counter
-        need.addEventListener("input", function () { count.textContent = need.value.length; });
+    /* ---- INCOME: live format + soft warning, strong on blur ---- */
+    if (incomeEl) {
+        incomeEl.addEventListener("input", function () {
+            if (incomeEl.value.trim() !== "") {
+                refreshIncome(false);
+            } else if (isTouched(incomeEl)) {
+                refreshIncome(true);
+            }
+        });
+        incomeEl.addEventListener("blur", function () {
+            markTouched(incomeEl);
+            refreshIncome(true);
+        });
+    }
 
-        // Example chips
-        document.querySelectorAll(".chip").forEach(function (chip) {
-            chip.addEventListener("click", function () {
-                need.value = chip.dataset.fill;
-                need.dispatchEvent(new Event("input"));
-                need.focus();
+    /* ---- NEED: counter stays live; trim + validate on blur ---- */
+    if (needEl) {
+        needEl.addEventListener("input", function () {
+            if (needCount) needCount.textContent = needEl.value.length;
+            if (needEl.value.trim() !== "") refreshNeed(false);
+            else if (isTouched(needEl)) refreshNeed(true);
+        });
+        needEl.addEventListener("blur", function () {
+            var trimmed = needEl.value.trim();
+            if (trimmed !== needEl.value) {
+                needEl.value = trimmed;
+                if (needCount) needCount.textContent = needEl.value.length;
+            }
+            markTouched(needEl);
+            refreshNeed(true);
+        });
+    }
+
+    /* ---- SELECTS: state, gender, social_cat validate on change/blur ---- */
+    ["state", "gender", "social_cat"].forEach(function (id) {
+        var el = $(id);
+        if (!el) return;
+        el.addEventListener("change", function () {
+            markTouched(el);
+            refreshSelect(el, true);
+        });
+        el.addEventListener("blur", function () {
+            markTouched(el);
+            refreshSelect(el, true);
+        });
+    });
+
+    /* ---- Example chips: trim, update counter, re-validate need ---- */
+    document.querySelectorAll(".chip").forEach(function (chip) {
+        chip.addEventListener("click", function () {
+            if (!needEl || !chip.dataset.fill) return;
+            needEl.value = chip.dataset.fill.trim();
+            needEl.dispatchEvent(new Event("input", { bubbles: true }));
+            needEl.focus();
+        });
+    });
+
+    /* ---- Focus moves forward: before leaving a field, validate it ---- *
+     * This gives "validate on the go while moving to the next input".    *
+     * We do it on focusout (bubbles) so Tab, click, and programmatic     *
+     * focus changes are all covered.                                     */
+    form.addEventListener("focusout", function (e) {
+        var el = e.target;
+        if (!el || !el.id) return;
+        if (el.id === "age") { markTouched(el); refreshAge(true); }
+        else if (el.id === "income") { markTouched(el); refreshIncome(true); }
+        else if (el.id === "need") {
+            var trimmed = el.value.trim();
+            if (trimmed !== el.value) {
+                el.value = trimmed;
+                if (needCount) needCount.textContent = el.value.length;
+            }
+            markTouched(el); refreshNeed(true);
+        }
+        else if (el.id === "state" || el.id === "gender" || el.id === "social_cat") {
+            markTouched(el); refreshSelect(el, true);
+        }
+    });
+
+    /* ---- Submit: full pass, focus the first invalid field ---- */
+    form.addEventListener("submit", function (e) {
+        // Run every validator, mark all as touched so errors become visible.
+        [ageEl, incomeEl, needEl, $("state"), $("gender"), $("social_cat")]
+            .forEach(markTouched);
+
+        var okAge = refreshAge(true);
+        var okIncome = refreshIncome(true);
+        var okNeed = refreshNeed(true);
+        var okState = refreshSelect($("state"), true);
+        var okGender = refreshSelect($("gender"), true);
+        var okCat = refreshSelect($("social_cat"), true);
+
+        if (!okAge || !okIncome || !okNeed || !okState || !okGender || !okCat) {
+            e.preventDefault();
+            form.classList.add("was-validated");
+
+            // Move focus to the first invalid field so the user can fix it.
+            var firstInvalid = form.querySelector(".is-invalid, :invalid");
+            if (firstInvalid && typeof firstInvalid.focus === "function") {
+                firstInvalid.focus();
+                if (typeof firstInvalid.reportValidity === "function") {
+                    firstInvalid.reportValidity();
+                }
+            }
+            return;
+        }
+
+        // Need is normalised before it leaves the page.
+        if (needEl) needEl.value = validateNeed(needEl.value).value;
+
+        // Native check for anything we don't explicitly validate.
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            form.classList.add("was-validated");
+            form.reportValidity();
+            return;
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML =
+                '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>' +
+                (activeLang() === "hi" ? "योजनाएँ खोजी जा रही हैं…" : "Finding schemes…");
+        }
+    });
+
+    /* Language change: clear stale custom validity so messages
+       regenerate in the new language on the next interaction. */
+    var langSel = document.getElementById("vLang");
+    if (langSel) {
+        langSel.addEventListener("change", function () {
+            [ageEl, incomeEl, needEl, $("state"), $("gender"), $("social_cat")]
+                .forEach(function (el) { if (el) el.setCustomValidity(""); });
+            if (isTouched(ageEl)) refreshAge(true);
+            if (isTouched(incomeEl)) refreshIncome(true);
+            if (isTouched(needEl)) refreshNeed(true);
+            ["state", "gender", "social_cat"].forEach(function (id) {
+                var el = $(id);
+                if (isTouched(el)) refreshSelect(el, true);
             });
         });
-
-        // Validate + loading state
-        form.addEventListener("submit", function (e) {
-            if (!form.checkValidity()) {
-                e.preventDefault();
-                form.classList.add("was-validated");
-                form.reportValidity();
-                return;
-            }
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Finding schemes…';
-        });
-    })();
+    }
+})();
 </script>
 
 <script>

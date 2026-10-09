@@ -1,0 +1,65 @@
+{
+  "lastUpdated": "2026-10-09T22:26:35.749Z",
+  "user": {
+    "id": "usr_1791574615748",
+    "updatedAt": "2026-10-09T22:26:35.749Z",
+    "personal": {
+      "fullName": "Ramesh Kumar",
+      "guardianName": "Suresh Kumar",
+      "dob": "1995-05-15",
+      "age": 25,
+      "gender": "female",
+      "maritalStatus": "Married"
+    },
+    "contact": {
+      "mobile": "9876543210",
+      "email": "ramesh@example.com",
+      "state": "Jharkhand",
+      "district": "Jaipur",
+      "cityVillage": "Amer",
+      "pincode": "302001",
+      "address": "Plot 45, Amer Road",
+      "areaType": "Rural"
+    },
+    "demographics": {
+      "socialCat": "SC",
+      "minority": false,
+      "minorityCommunity": "",
+      "disability": false,
+      "disabilityType": "",
+      "disabilityPct": null,
+      "bpl": true,
+      "rationCardNo": ""
+    },
+    "educationOccupation": {
+      "education": "Graduate",
+      "occupation": "Farmer",
+      "income": 15000,
+      "incomeCertNo": ""
+    },
+    "bankIdentity": {
+      "aadhaarNo": "123456789012",
+      "panNo": "ABCDE1234F",
+      "bankName": "State Bank of India",
+      "accountNo": "12345678901",
+      "ifscCode": "SBIN0001234",
+      "accountHolderName": "Ramesh Kumar"
+    }
+  },
+  "applications": [
+    {
+      "id": "app_1791574883106",
+      "scheme_name": "Micro Credit Finance (NSFDC)",
+      "scheme_url": "https://www.myscheme.gov.in/schemes/mcfnsfdc",
+      "status": "Profile Saved - Ready to Apply",
+      "appliedAt": "2026-10-09T22:26:35.749Z"
+    },
+    {
+      "id": "app_1791574615748",
+      "scheme_name": "Pradhan Mantri Krishi Sinchayee Yojana",
+      "scheme_url": "https://pmksy.gov.in",
+      "status": "Profile Saved - Ready to Apply",
+      "appliedAt": "2026-10-09T19:36:55.741Z"
+    }
+  ]
+}

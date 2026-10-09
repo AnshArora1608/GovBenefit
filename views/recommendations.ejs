@@ -227,6 +227,7 @@
                 <% } %>
             </div>
             <div class="d-flex gap-2 no-print">
+                <a href="/dashboard" class="btn btn-hero">Dashboard</a>
                 <a href="/wishlist" class="btn btn-hero">My wishlist (<span id="wlCount">0</span>)</a>
                 <a href="/recommend" class="btn btn-hero">Search again</a>
             </div>
@@ -435,7 +436,19 @@
                 <% } %>
 
                 <div class="d-flex flex-wrap gap-2 mt-3 no-print">
-                    <% if (link) { %><a href="<%= link %>" target="_blank" rel="noopener noreferrer" class="btn btn-apply">View &amp; apply</a><% } %>
+                    <% 
+                        var profileApplyUrl = "/profile?scheme_name=" + encodeURIComponent(scheme.scheme_name || "") + 
+                                             "&scheme_url=" + encodeURIComponent(link || "") + 
+                                             "&state=" + encodeURIComponent((profile && profile.state) || "") + 
+                                             "&gender=" + encodeURIComponent((profile && profile.gender) || "") + 
+                                             "&age=" + encodeURIComponent((profile && profile.age) || "") + 
+                                             "&income=" + encodeURIComponent((profile && profile.income) || "") + 
+                                             "&social_cat=" + encodeURIComponent((profile && profile.social_cat) || "") + 
+                                             "&minority=" + encodeURIComponent((profile && profile.minority) || "") + 
+                                             "&disability=" + encodeURIComponent((profile && profile.disability) || "") + 
+                                             "&bpl=" + encodeURIComponent((profile && profile.bpl) || "");
+                    %>
+                    <a href="<%= profileApplyUrl %>" class="btn btn-apply">View &amp; apply</a>
                     <% if (hasDetails) { %>
                         <button class="btn btn-soft" data-bs-toggle="collapse" data-bs-target="#d<%= index %>" aria-expanded="false">Details</button>
                     <% } %>

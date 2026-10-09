@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Citizen Profile Collection | GovBenefit</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink: #14213d;
+            --ink-soft: #3a4a6b;
+            --saffron: #e8871e;
+            --saffron-dark: #c76d0c;
+            --green: #1f7a4d;
+            --canvas: #eef1f6;
+            --line: #d9dfe9;
+            --muted: #5b6678;
+        }
+
+        body {
+            font-family: "Source Sans 3", system-ui, sans-serif;
+            background: var(--canvas);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, legend {
+            font-family: "Bricolage Grotesque", "Source Sans 3", sans-serif;
+        }
+
+        .wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 28px 16px 64px;
+        }
+
+        /* Top Nav */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            margin-bottom: 24px;
+        }
+        .brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--ink);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .brand span {
+            color: var(--saffron);
+        }
+
+        /* Hero */
+        .hero {
+            background: var(--ink);
+            color: #fff;
+            border-radius: 18px;
+            padding: 28px 32px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background: linear-gradient(var(--saffron) 0 33%, #fff 33% 66%, var(--green) 66%);
+        }
+        .hero h1 {
+            font-size: 1.85rem;
+            margin-bottom: 6px;
+        }
+        .hero p {
+            color: #c3cce0;
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        /* Scheme callout badge */
+        .scheme-badge-card {
+            background: #fff;
+            border: 1px solid var(--saffron);
+            border-left: 5px solid var(--saffron);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 28px;
+            box-shadow: 0 4px 16px rgba(232, 135, 30, 0.08);
+        }
+        .scheme-badge-card h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 4px;
+            color: var(--ink);
+        }
+
+        /* Fieldsets & Form styling */
+        .profile-form-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 32px;
+            box-shadow: 0 10px 30px rgba(20, 33, 61, 0.05);
+        }
+
+        fieldset.profile-fieldset {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 22px 24px 26px;
+            margin-bottom: 30px;
+            background: #fdfdfd;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        fieldset.profile-fieldset:focus-within {
+            border-color: #abbddb;
+            box-shadow: 0 4px 14px rgba(20, 33, 61, 0.04);
+        }
+
+        legend.profile-legend {
+            float: none;
+            width: auto;
+            padding: 4px 14px;
+            margin-bottom: 12px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ink);
+            background: #f1f4f9;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--ink);
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+        }
+        .form-label .req {
+            color: #d9383a;
+        }
+        .form-text {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #ccd4e0;
+            padding: 9px 12px;
+            font-size: 0.95rem;
+            color: var(--ink);
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--saffron);
+            box-shadow: 0 0 0 3px rgba(232, 135, 30, 0.2);
+        }
+
+        /* Save Details Button */
+        .btn-save-details {
+            background: var(--saffron);
+            color: #1d1203;
+            border: 0;
+            font-weight: 700;
+            font-size: 1.15rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(232, 135, 30, 0.3);
+            transition: transform .15s ease, background-color .15s ease, box-shadow .15s ease;
+        }
+        .btn-save-details:hover {
+            background: var(--saffron-dark);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(199, 109, 12, 0.35);
+        }
+        .btn-save-details:active {
+            transform: translateY(0);
+        }
+
+        .btn-hero {
+            background: transparent;
+            border: 1px solid var(--line);
+            color: var(--ink);
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 6px 14px;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .btn-hero:hover {
+            background: #f1f4f9;
+            color: var(--ink);
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+
+    <!-- Top Navigation -->
+    <header class="top-nav">
+        <a href="/" class="brand">
+            🏛️ Gov<span>Benefit</span>
+        </a>
+        <div class="d-flex gap-2">
+            <a href="/recommend" class="btn-hero">🔍 Find Schemes</a>
+            <a href="/wishlist" class="btn-hero">⭐ Wishlist</a>
+            <a href="/dashboard" class="btn-hero">📊 Dashboard</a>
+        </div>
+    </header>
+
+    <!-- Hero Header -->
+    <section class="hero">
+        <h1>Citizen Profile Data Collection</h1>
+        <p>Complete your profile information below. This data will be securely stored to ease your scheme applications.</p>
+    </section>
+
+    <!-- Target Scheme Card (if accessed from View & Apply) -->
+    <% if (scheme && scheme.name) { %>
+    <section class="scheme-badge-card d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <div class="text-uppercase small fw-bold text-muted">Applying for Scheme</div>
+            <h4><%= scheme.name %></h4>
+            <div class="small text-muted">Save your profile details below to complete your application entry.</div>
+        </div>
+        <% if (scheme.url) { %>
+        <div>
+            <a href="<%= scheme.url %>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">
+                View Official Portal ↗
+            </a>
+        </div>
+        <% } %>
+    </section>
+    <% } %>
+
+    <!-- Profile Data Form -->
+    <div class="profile-form-card">
+        <form method="POST" action="/profile" id="profileForm">
+
+            <!-- Hidden Scheme Info -->
+            <input type="hidden" name="scheme_name" value="<%= (scheme && scheme.name) || '' %>">
+            <input type="hidden" name="scheme_url" value="<%= (scheme && scheme.url) || '' %>">
+
+            <!-- Fieldset 1: Personal Details -->
+            <fieldset class="profile-fieldset">
+                <legend class="profile-legend">
+                    <span>👤</span> 1. Personal Details (व्यक्तिगत विवरण)
+                </legend>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="fullName" class="form-label">Full Name (पूरा नाम) <span class="req">*</span></label>
+                        <input type="text" class="form-control" id="fullName" name="full_name" value="<%= profile.fullName || '' %>" placeholder="As written on official ID" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="guardianName" class="form-label">Father's / Mother's / Guardian's Name (पिता/माता/अभिभावक का नाम)</label>
+                        <input type="text" class="form-control" id="guardianName" name="guardian_name" value="<%= profile.guardianName || '' %>" placeholder="Guardian's name">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="dob" class="form-label">Date of Birth (जन्म तिथि)</label>
+                        <input type="date" class="form-control" id="dob" name="dob" value="<%= profile.dob || '' %>">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="age" class="form-label">Age (आयु) <span class="req">*</span></label>
+                        <input type="number" class="form-control" id="age" name="age" min="1" max="120" value="<%= profile.age || '' %>" placeholder="Years" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="gender" class="form-label">Gender (लिंग) <span class="req">*</span></label>
+                        <select class="form-select" id="gender" name="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="male" <%= String(profile.gender).toLowerCase() === 'male' ? 'selected' : '' %>>Male (पुरुष)</option>
+                            <option value="female" <%= String(profile.gender).toLowerCase() === 'female' ? 'selected' : '' %>>Female (महिला)</option>
+                            <option value="transgender" <%= String(profile.gender).toLowerCase() === 'transgender' ? 'selected' : '' %>>Transgender (ट्रांसजेंडर)</option>
+                            <option value="other" <%= String(profile.gender).toLowerCase() === 'other' ? 'selected' : '' %>>Other (अन्य)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="maritalStatus" class="form-label">Marital Status (वैवाहिक स्थिति)</label>
+                        <select class="form-select" id="maritalStatus" name="marital_status">
+                            <option value="">Select Status</option>
+                            <option value="Single" <%= profile.maritalStatus === 'Single' ? 'selected' : '' %>>Single / अविवाहित</option>
+                            <option value="Married" <%= profile.maritalStatus === 'Married' ? 'selected' : '' %>>Married / विवाहित</option>
+                            <option value="Widowed" <%= profile.maritalStatus === 'Widowed' ? 'selected' : '' %>>Widow / Widower (विधवा / विधुर)</option>
+                            <option value="Divorced" <%= profile.maritalStatus === 'Divorced' ? 'selected' : '' %>>Divorced / तलाकशुदा</option>
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Fieldset 2: Contact & Address Details -->
+            <fieldset class="profile-fieldset">
+                <legend class="profile-legend">
+                    <span>📍</span> 2. Contact & Address Details (संपर्क एवं पता विवरण)
+                </legend>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="mobile" class="form-label">Mobile Number (मोबाइल नंबर) <span class="req">*</span></label>
+                        <input type="tel" class="form-control" id="mobile" name="mobile" pattern="[0-9]{10}" value="<%= profile.mobile || '' %>" placeholder="10-digit mobile number" required>
+                        <div class="form-text">Used for application notifications and updates.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Email Address (ईमेल पता)</label>
+                        <input type="email" class="form-control" id="email" name="email" value="<%= profile.email || '' %>" placeholder="example@domain.com">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="state" class="form-label">State / Union Territory (राज्य / केंद्र शासित प्रदेश) <span class="req">*</span></label>
+                        <select class="form-select" id="state" name="state" required>
+                            <option value="">Select State</option>
+                            <% states.forEach(function(st) { %>
+                                <option value="<%= st %>" <%= (profile.state && profile.state.toLowerCase() === st.toLowerCase()) ? 'selected' : '' %>><%= st %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="district" class="form-label">District (जिला)</label>
+                        <input type="text" class="form-control" id="district" name="district" value="<%= profile.district || '' %>" placeholder="e.g. Pune, Jaipur, Lucknow">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="cityVillage" class="form-label">City / Village / Tehsil (शहर / गांव / तहसील)</label>
+                        <input type="text" class="form-control" id="cityVillage" name="city_village" value="<%= profile.cityVillage || '' %>" placeholder="Town or village name">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="pincode" class="form-label">PIN Code (पिन कोड)</label>
+                        <input type="text" class="form-control" id="pincode" name="pincode" pattern="[0-9]{6}" maxlength="6" value="<%= profile.pincode || '' %>" placeholder="6-digit PIN">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="areaType" class="form-label">Area Type (क्षेत्र)</label>
+                        <select class="form-select" id="areaType" name="area_type">
+                            <option value="Rural" <%= profile.areaType === 'Rural' ? 'selected' : '' %>>Rural (ग्रामीण)</option>
+                            <option value="Urban" <%= profile.areaType === 'Urban' ? 'selected' : '' %>>Urban (शहरी)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label for="address" class="form-label">Residential Address (निवास का पूरा पता)</label>
+                        <textarea class="form-control" id="address" name="address" rows="2" placeholder="House/Flat No, Street, Landmark"><%= profile.address || '' %></textarea>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Fieldset 3: Demographic & Social Category Details -->
+            <fieldset class="profile-fieldset">
+                <legend class="profile-legend">
+                    <span>🏷️</span> 3. Social & Demographic Details (सामाजिक एवं श्रेणी विवरण)
+                </legend>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="socialCat" class="form-label">Social Category (सामाजिक श्रेणी) <span class="req">*</span></label>
+                        <select class="form-select" id="socialCat" name="social_cat" required>
+                            <option value="General" <%= profile.socialCat === 'General' ? 'selected' : '' %>>General (सामान्य)</option>
+                            <option value="OBC" <%= profile.socialCat === 'OBC' ? 'selected' : '' %>>OBC (अन्य पिछड़ा वर्ग)</option>
+                            <option value="SC" <%= profile.socialCat === 'SC' ? 'selected' : '' %>>SC (अनुसूचित जाति)</option>
+                            <option value="ST" <%= profile.socialCat === 'ST' ? 'selected' : '' %>>ST (अनुसूचित जनजाति)</option>
+                            <option value="EWS" <%= profile.socialCat === 'EWS' ? 'selected' : '' %>>EWS (आर्थिक रूप से कमजोर)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="minority" class="form-label">Belong to Minority Community? (अल्पसंख्यक?)</label>
+                        <select class="form-select" id="minority" name="minority">
+                            <option value="false" <%= !profile.minority ? 'selected' : '' %>>No (नहीं)</option>
+                            <option value="true" <%= profile.minority ? 'selected' : '' %>>Yes (हाँ)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="minorityCommunity" class="form-label">Minority Community (यदि लागू हो)</label>
+                        <select class="form-select" id="minorityCommunity" name="minority_community">
+                            <option value="">Not Applicable / लागू नहीं</option>
+                            <option value="Muslim" <%= profile.minorityCommunity === 'Muslim' ? 'selected' : '' %>>Muslim (मुस्लिम)</option>
+                            <option value="Christian" <%= profile.minorityCommunity === 'Christian' ? 'selected' : '' %>>Christian (ईसाई)</option>
+                            <option value="Sikh" <%= profile.minorityCommunity === 'Sikh' ? 'selected' : '' %>>Sikh (सिख)</option>
+                            <option value="Buddhist" <%= profile.minorityCommunity === 'Buddhist' ? 'selected' : '' %>>Buddhist (बौद्ध)</option>
+                            <option value="Jain" <%= profile.minorityCommunity === 'Jain' ? 'selected' : '' %>>Jain (जैन)</option>
+                            <option value="Parsi" <%= profile.minorityCommunity === 'Parsi' ? 'selected' : '' %>>Parsi (पारसी)</option>
+                            <option value="Other" <%= profile.minorityCommunity === 'Other' ? 'selected' : '' %>>Other (अन्य)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="disability" class="form-label">Differently Abled / PwD? (दिव्यांग?)</label>
+                        <select class="form-select" id="disability" name="disability">
+                            <option value="false" <%= !profile.disability ? 'selected' : '' %>>No (नहीं)</option>
+                            <option value="true" <%= profile.disability ? 'selected' : '' %>>Yes (हाँ - Divyang)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="disabilityType" class="form-label">Disability Type (दिव्यांगता का प्रकार)</label>
+                        <input type="text" class="form-control" id="disabilityType" name="disability_type" value="<%= profile.disabilityType || '' %>" placeholder="e.g. Locomotor, Visual, Hearing, etc.">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="disabilityPct" class="form-label">Disability Percentage (% दिव्यांगता)</label>
+                        <input type="number" class="form-control" id="disabilityPct" name="disability_pct" min="0" max="100" value="<%= profile.disabilityPct || '' %>" placeholder="e.g. 40">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="bpl" class="form-label">BPL / Ration Card Holder? (बीपीएल कार्ड?)</label>
+                        <select class="form-select" id="bpl" name="bpl">
+                            <option value="false" <%= !profile.bpl ? 'selected' : '' %>>No (नहीं)</option>
+                            <option value="true" <%= profile.bpl ? 'selected' : '' %>>Yes (हाँ - Below Poverty Line)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="rationCardNo" class="form-label">Ration Card / BPL Number (राशन कार्ड नंबर)</label>
+                        <input type="text" class="form-control" id="rationCardNo" name="ration_card_no" value="<%= profile.rationCardNo || '' %>" placeholder="Optional card number">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Fieldset 4: Education, Occupation & Income -->
+            <fieldset class="profile-fieldset">
+                <legend class="profile-legend">
+                    <span>🎓</span> 4. Education, Occupation & Income (शिक्षा, व्यवसाय एवं आय)
+                </legend>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="education" class="form-label">Highest Education Qualification (उच्चतम शैक्षणिक योग्यता)</label>
+                        <select class="form-select" id="education" name="education">
+                            <option value="">Select Qualification</option>
+                            <option value="Below 10th" <%= profile.education === 'Below 10th' ? 'selected' : '' %>>Below 10th (10वीं से कम)</option>
+                            <option value="10th Pass" <%= profile.education === '10th Pass' ? 'selected' : '' %>>10th Pass / Secondary (10वीं उत्तीर्ण)</option>
+                            <option value="12th Pass" <%= profile.education === '12th Pass' ? 'selected' : '' %>>12th Pass / Higher Secondary (12वीं उत्तीर्ण)</option>
+                            <option value="Diploma / ITI" <%= profile.education === 'Diploma / ITI' ? 'selected' : '' %>>Diploma / ITI (डिप्लोमा / आईटीआई)</option>
+                            <option value="Graduate" <%= profile.education === 'Graduate' ? 'selected' : '' %>>Graduate / Bachelor's Degree (स्नातक)</option>
+                            <option value="Post Graduate" <%= profile.education === 'Post Graduate' ? 'selected' : '' %>>Post Graduate / Master's (स्नातकोत्तर)</option>
+                            <option value="Doctorate" <%= profile.education === 'Doctorate' ? 'selected' : '' %>>Doctorate / Ph.D.</option>
+                            <option value="No Formal Education" <%= profile.education === 'No Formal Education' ? 'selected' : '' %>>No Formal Education</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="occupation" class="form-label">Occupation / Employment Status (व्यवसाय / रोजगार स्थिति)</label>
+                        <select class="form-select" id="occupation" name="occupation">
+                            <option value="">Select Occupation</option>
+                            <option value="Student" <%= profile.occupation === 'Student' ? 'selected' : '' %>>Student (छात्र / विद्यार्थी)</option>
+                            <option value="Farmer" <%= profile.occupation === 'Farmer' ? 'selected' : '' %>>Farmer / Agriculture (किसान / कृषि)</option>
+                            <option value="Self-Employed / MSME" <%= profile.occupation === 'Self-Employed / MSME' ? 'selected' : '' %>>Self-Employed / Business / MSME (स्वरोजगार / व्यापारी)</option>
+                            <option value="Artisan / Craftsman" <%= profile.occupation === 'Artisan / Craftsman' ? 'selected' : '' %>>Artisan / Craftsman / Weaver (कारीगर / बुनकर)</option>
+                            <option value="Unemployed" <%= profile.occupation === 'Unemployed' ? 'selected' : '' %>>Unemployed (बेरोजगार)</option>
+                            <option value="Daily Wage Worker" <%= profile.occupation === 'Daily Wage Worker' ? 'selected' : '' %>>Daily Wage / Construction Worker (दैनिक वेतनभोगी)</option>
+                            <option value="Private Sector" <%= profile.occupation === 'Private Sector' ? 'selected' : '' %>>Private Sector Employee (निजी नौकरी)</option>
+                            <option value="Government Employee" <%= profile.occupation === 'Government Employee' ? 'selected' : '' %>>Government Employee (सरकारी कर्मचारी)</option>
+                            <option value="Homemaker" <%= profile.occupation === 'Homemaker' ? 'selected' : '' %>>Homemaker (गृहणी)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="income" class="form-label">Annual Family Income (वार्षिक पारिवारिक आय - ₹) <span class="req">*</span></label>
+                        <input type="number" class="form-control" id="income" name="income" min="0" step="1000" value="<%= profile.income || '' %>" placeholder="e.g. 150000" required>
+                        <div class="form-text">Total combined income of all household members.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="incomeCertNo" class="form-label">Income Certificate Number (आय प्रमाण पत्र क्रमांक)</label>
+                        <input type="text" class="form-control" id="incomeCertNo" name="income_cert_no" value="<%= profile.incomeCertNo || '' %>" placeholder="e.g. INC/2026/12345 (Optional)">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Fieldset 5: Bank & Identification Details -->
+            <fieldset class="profile-fieldset">
+                <legend class="profile-legend">
+                    <span>🏦</span> 5. Bank & Identification Details (बैंक एवं पहचान विवरण)
+                </legend>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="aadhaarNo" class="form-label">Aadhaar Number (आधार संख्या)</label>
+                        <input type="text" class="form-control" id="aadhaarNo" name="aadhaar_no" pattern="[0-9]{12}" maxlength="12" value="<%= profile.aadhaarNo || '' %>" placeholder="12-digit Aadhaar Number">
+                        <div class="form-text">Used for direct benefit transfer (DBT) verification.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="panNo" class="form-label">PAN Card Number (पैन कार्ड नंबर)</label>
+                        <input type="text" class="form-control" id="panNo" name="pan_no" maxlength="10" value="<%= profile.panNo || '' %>" placeholder="e.g. ABCDE1234F" style="text-transform:uppercase">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="bankName" class="form-label">Bank Name (बैंक का नाम)</label>
+                        <input type="text" class="form-control" id="bankName" name="bank_name" value="<%= profile.bankName || '' %>" placeholder="e.g. State Bank of India, Bank of Baroda">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="accountHolderName" class="form-label">Account Holder Name (खाताधारक का नाम)</label>
+                        <input type="text" class="form-control" id="accountHolderName" name="account_holder_name" value="<%= profile.accountHolderName || '' %>" placeholder="Name as per Bank Passbook">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="accountNo" class="form-label">Bank Account Number (खाता संख्या)</label>
+                        <input type="text" class="form-control" id="accountNo" name="account_no" value="<%= profile.accountNo || '' %>" placeholder="Account Number">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="ifscCode" class="form-label">IFSC Code (आईएफएससी कोड)</label>
+                        <input type="text" class="form-control" id="ifscCode" name="ifsc_code" maxlength="11" value="<%= profile.ifscCode || '' %>" placeholder="e.g. SBIN0001234" style="text-transform:uppercase">
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- Save Details Action Button -->
+            <div class="text-center mt-5 mb-3">
+                <button type="submit" class="btn btn-save-details btn-lg px-5 py-3" id="saveDetailsBtn">
+                    💾 Save Details
+                </button>
+                <div class="text-muted small mt-2">
+                    Clicking "Save Details" will store your data securely in JSON format and redirect you to your personalized Dashboard.
+                </div>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>
