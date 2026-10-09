@@ -1,4 +1,13 @@
-pandas
-numpy
-scikit-learn
-joblib
+# Python 3.12 recommended
+# These exact versions were tested together with your ML script (all its imports load fine).
+
+# Core ML (used in your training script)
+scikit-learn==1.7.1
+pandas==3.0.6
+numpy==2.4.4
+scipy==1.17.1
+
+# scikit-learn / pandas dependencies (pinned for repeatable installs)
+joblib==1.5.3
+threadpoolctl==3.6.0
+python-dateutil==2.9.0.post0

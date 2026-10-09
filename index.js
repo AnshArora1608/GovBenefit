@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Home
 app.get("/", (req, res) => {
-    res.render("home");
+    res.render("recommendation");
 });
 
 const recommendationRoutes = require("./routes/recommendationRoutes");
