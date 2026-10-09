@@ -176,6 +176,7 @@
     var hasProfile = (typeof profile !== "undefined" && profile);
     var near = (typeof near_misses !== "undefined" && near_misses) ? near_misses : [];
     var master = (typeof master_docs !== "undefined" && master_docs) ? master_docs : [];
+    var needKw = (typeof need_keywords !== "undefined" && need_keywords) ? need_keywords : [];
 
     function safeUrl(u) { return /^https?:\/\//i.test(String(u || "")) ? String(u) : ""; }
     function pct(s) { var n = Number(s); if (isNaN(n)) n = 0; return Math.max(0, Math.min(100, n)); }
@@ -213,6 +214,9 @@
             <div>
                 <h1>Your matched schemes</h1>
                 <p>Ranked by how well each scheme fits your profile.</p>
+                <% if (needKw.length) { %>
+                    <div><span class="profile-chip">We understood your need as: <%= needKw.slice(0, 6).join(", ") %></span></div>
+                <% } %>
                 <% if (hasProfile) { %>
                     <div>
                         <% if (profile.state) { %><span class="profile-chip"><%= profile.state %></span><% } %>
@@ -300,6 +304,11 @@
                 <option value="deadline">Closing soon first</option>
             </select>
             <button class="btn btn-soft btn-sm" onclick="window.print()">Save as PDF</button>
+            <select id="speakLang" class="form-select form-select-sm" style="max-width:120px" aria-label="Voice language">
+                <option value="hi-IN">हिन्दी</option>
+                <option value="en-IN">English</option>
+            </select>
+            <button class="btn btn-soft btn-sm" id="listenAll">Listen to top 3</button>
         </div>
 
         <!-- Cards -->
@@ -517,6 +526,49 @@
     if (!box) return;
     var cards = Array.prototype.slice.call(box.querySelectorAll(".scheme-card"));
 
+    /* ---------- Read-aloud (for users who cannot read easily) ---------- */
+    var langSel = document.getElementById("speakLang");
+    try { langSel.value = localStorage.getItem("schemeLang") || "hi-IN"; } catch (e) {}
+    langSel.addEventListener("change", function () { try { localStorage.setItem("schemeLang", langSel.value); } catch (e) {} });
+
+    function isHi() { return langSel.value.indexOf("hi") === 0; }
+    function daysTo(iso) { var n = new Date(); return Math.round((Date.parse(iso + "T00:00:00Z") - Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())) / 864e5); }
+    function dateWords(iso) { return new Date(iso + "T00:00:00Z").toLocaleDateString(isHi() ? "hi-IN" : "en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }); }
+
+    function cardText(c) {
+        var hi = isHi(), st = c.dataset.state, end = c.dataset.end, start = c.dataset.start;
+        var score = Number(c.dataset.score).toFixed(0);
+        var docs = [].map.call(c.querySelectorAll(".doc-row:not(.suggested) span"), function (x) { return x.textContent.trim(); });
+        var when = "";
+        if (st === "closed") when = hi ? "यह योजना अभी बंद है।" : "This scheme is closed right now.";
+        else if (st === "upcoming" && start) when = hi ? "यह योजना " + dateWords(start) + " से शुरू होगी।" : "This scheme starts on " + dateWords(start) + ".";
+        else if (end && st === "closing") when = hi ? "जल्दी करें, आखिरी तारीख " + dateWords(end) + " है। सिर्फ़ " + daysTo(end) + " दिन बाकी हैं।" : "Hurry, the last date is " + dateWords(end) + ". Only " + daysTo(end) + " days left.";
+        else if (end) when = hi ? "आखिरी तारीख " + dateWords(end) + " है।" : "The last date is " + dateWords(end) + ".";
+        var d = docs.length ? (hi ? "ज़रूरी कागज़ात: " : "Documents needed: ") + docs.join(", ") + "." : "";
+        return hi ? c.dataset.name + "। आपके लिए मैच " + score + " प्रतिशत। " + when + " " + d
+                  : c.dataset.name + ". Match " + score + " percent. " + when + " " + d;
+    }
+
+    var speaking = false;
+    function speakText(parts) {
+        if (!("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        if (speaking) { speaking = false; return; }          // second tap = stop
+        speaking = true;
+        (function say(i) {
+            if (!speaking || i >= parts.length) { speaking = false; return; }
+            var u = new SpeechSynthesisUtterance(parts[i]);
+            u.lang = langSel.value; u.rate = 0.9;
+            u.onend = function () { say(i + 1); };
+            u.onerror = function () { speaking = false; };
+            window.speechSynthesis.speak(u);
+        })(0);
+    }
+    document.getElementById("listenAll").addEventListener("click", function () {
+        var visible = cards.filter(function (c) { return c.style.display !== "none"; }).slice(0, 3);
+        speakText(visible.map(cardText));
+    });
+
     // Filters
     document.querySelectorAll(".fchip").forEach(function (chip) {
         chip.addEventListener("click", function () {
@@ -562,13 +614,7 @@
                 (docs.length ? "Documents needed:\n" + docs.join("\n") + "\n" : "") + c.dataset.url;
             window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
         });
-        c.querySelector("[data-speak]").addEventListener("click", function () {
-            if (!("speechSynthesis" in window)) return;
-            window.speechSynthesis.cancel();
-            var u = new SpeechSynthesisUtterance(c.dataset.name + ". Match score " + Number(c.dataset.score).toFixed(0) + " percent.");
-            u.lang = "en-IN";
-            window.speechSynthesis.speak(u);
-        });
+        c.querySelector("[data-speak]").addEventListener("click", function () { speakText([cardText(c)]); });
     });
 })();
 </script>

@@ -139,6 +139,26 @@
 
         .alert-danger { border-radius: 12px; }
 
+        /* ---------- Voice assistant ---------- */
+        .voice-card { background: #fff4e6; border: 1px solid var(--saffron); border-radius: 16px; padding: 18px 20px; margin-bottom: 28px; }
+        .voice-card h2 { font-size: 1.1rem; margin: 0 0 2px; }
+        .btn-voice { background: var(--ink); color: #fff; border: 0; border-radius: 10px; font-weight: 700; padding: 9px 18px; }
+        .btn-voice:hover, .btn-voice:focus-visible { background: var(--ink-soft); color: #fff; }
+        .btn-voice-alt { background: #fff; color: var(--ink); border: 1px solid var(--saffron); border-radius: 10px; font-weight: 700; padding: 9px 18px; }
+        .btn-voice-alt:hover { background: #fff; border-color: var(--saffron-dark); }
+        .voice-stage { margin-top: 16px; background: #fff; border-radius: 14px; padding: 22px 18px; text-align: center; }
+        .vq { font-family: "Bricolage Grotesque", "Source Sans 3", sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+        .vheard { min-height: 1.6em; color: var(--muted); margin-bottom: 8px; }
+        .vchips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 16px; }
+        .vchips .chip { font-size: 1.05rem; padding: 9px 20px; }
+        .mic { width: 84px; height: 84px; border-radius: 50%; border: 0; background: var(--saffron); color: #1d1203; display: grid; place-items: center; margin: 0 auto 6px; }
+        .mic:hover { background: var(--saffron-dark); color: #fff; }
+        .mic.listening { background: var(--green); color: #fff; animation: pulse 1.2s infinite; }
+        .mic-label { font-weight: 600; color: var(--ink-soft); margin-bottom: 14px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(31,122,77,.5); } 100% { box-shadow: 0 0 0 24px rgba(31,122,77,0); } }
+        .form-control.voice-filled, .form-select.voice-filled { border-color: var(--green); background-color: #f1faf5; }
+        @media (prefers-reduced-motion: reduce) { .mic.listening { animation: none; } }
+
         @media (max-width: 991px) {
             .shell { margin: 0; border-radius: 0; }
             .intro { padding: 32px 24px 28px 30px; }
@@ -185,6 +205,38 @@
                     <%= error %>
                 </div>
             <% } %>
+
+            <!-- Voice assistant: for people who find typing difficult -->
+            <section class="voice-card" id="voiceCard" hidden aria-label="Fill the form by voice">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <h2>बोलकर भरें / Fill by voice</h2>
+                        <p class="meta mb-0">Typing is hard? Just speak. Hindi or English. बस बोलिए, हम फ़ॉर्म भर देंगे।</p>
+                    </div>
+                    <select id="vLang" class="form-select form-select-sm" style="max-width:130px" aria-label="Voice language">
+                        <option value="hi-IN">हिन्दी</option>
+                        <option value="en-IN">English</option>
+                    </select>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <button type="button" class="btn btn-voice" id="vStart">Ask me questions / सवाल पूछें</button>
+                    <button type="button" class="btn btn-voice-alt" id="vAll">Say everything at once / सब एक साथ बोलें</button>
+                </div>
+                <div class="voice-stage" id="vStage" hidden>
+                    <div class="vq" id="vQ" aria-live="polite"></div>
+                    <div class="vheard" id="vHeard" aria-live="polite"></div>
+                    <div class="vchips" id="vChips"></div>
+                    <button type="button" class="mic" id="vMic" aria-label="Tap to speak">
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+                    </button>
+                    <div class="mic-label" id="vMicLabel">Tap to speak</div>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-soft" id="vSkip">Skip / छोड़ें</button>
+                        <button type="button" class="btn btn-soft" id="vStop">Stop / बंद करें</button>
+                    </div>
+                </div>
+                <div class="meta mt-2" id="vNote" aria-live="polite"></div>
+            </section>
 
             <form action="/recommend" method="POST" id="schemeForm" novalidate>
 
@@ -334,6 +386,301 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Finding schemes…';
         });
     })();
+</script>
+
+<script>
+(function () {
+    function $(id) { return document.getElementById(id); }
+    function R(src) { return new RegExp(String(src).normalize("NFC"), "i"); }   // normalise so Hindi letters always match
+
+    /* PARSERS START */
+    var P = {};
+    var NUM0 = { zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15,
+        sixteen:16, seventeen:17, eighteen:18, nineteen:19, twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80, ninety:90, hundred:100,
+        "एक":1, "दो":2, "तीन":3, "चार":4, "पांच":5, "पाँच":5, "छह":6, "छः":6, "सात":7, "आठ":8, "नौ":9, "दस":10, "ग्यारह":11, "बारह":12, "तेरह":13, "चौदह":14,
+        "पंद्रह":15, "पन्द्रह":15, "सोलह":16, "सत्रह":17, "अठारह":18, "उन्नीस":19, "बीस":20, "तीस":30, "चालीस":40, "पचास":50, "साठ":60, "सत्तर":70, "अस्सी":80,
+        "नब्बे":90, "सौ":100, ek:1, teen:3, char:4, paanch:5, panch:5, chhe:6, saat:7, aath:8, nau:9, das:10, gyarah:11, barah:12, terah:13, chaudah:14,
+        pandrah:15, solah:16, satrah:17, atharah:18, unnis:19, bees:20, tees:30, chalis:40, pachas:50, saath:60, sattar:70, assi:80, nabbe:90, sau:100 };
+    var NUM = {};
+    Object.keys(NUM0).forEach(function (k) { NUM[k.normalize("NFC")] = NUM0[k]; });
+
+    var ST = {
+        "Andaman and Nicobar Islands": "andaman|nicobar|अंडमान|अण्डमान", "Andhra Pradesh": "andhra|आंध्र|आन्ध्र", "Arunachal Pradesh": "arunachal|अरुणाचल",
+        "Assam": "assam|आसाम|असम", "Bihar": "bihar|बिहार", "Chandigarh": "chandigarh|चंडीगढ़|चण्डीगढ़|चंडीगढ", "Chhattisgarh": "chhattisgarh|chattisgarh|chhatisgarh|छत्तीसगढ़|छत्तीसगढ",
+        "Delhi": "delhi|दिल्ली", "Goa": "\\bgoa\\b|गोवा", "Gujarat": "gujarat|gujrat|गुजरात", "Haryana": "haryana|hariyana|हरियाणा", "Himachal Pradesh": "himachal|हिमाचल",
+        "Jammu and Kashmir": "jammu|kashmir|जम्मू|कश्मीर", "Jharkhand": "jharkhand|झारखंड|झारखण्ड", "Karnataka": "karnataka|कर्नाटक|कर्नाटका", "Kerala": "kerala|केरल|केरला",
+        "Ladakh": "ladakh|लद्दाख|लद्धाख", "Madhya Pradesh": "madhya|मध्य प्रदेश|मध्यप्रदेश|\\bmp\\b|एमपी", "Maharashtra": "maharashtra|महाराष्ट्र", "Manipur": "manipur|मणिपुर",
+        "Meghalaya": "meghalaya|मेघालय", "Mizoram": "mizoram|मिजोरम", "Nagaland": "nagaland|नागालैंड", "Odisha": "odisha|orissa|ओडिशा|उड़ीसा|ओड़िशा",
+        "Puducherry": "puducherry|pondicherry|पुडुचेरी|पांडिचेरी", "Punjab": "punjab|पंजाब", "Rajasthan": "rajasthan|राजस्थान", "Sikkim": "sikkim|सिक्किम",
+        "Tamil Nadu": "tamil|तमिल", "Telangana": "telangana|telengana|तेलंगाना", "Tripura": "tripura|त्रिपुरा",
+        "Uttar Pradesh": "uttar pradesh|उत्तर प्रदेश|उत्तरप्रदेश|\\bup\\b|यूपी", "Uttarakhand": "uttarakhand|uttrakhand|uttaranchal|उत्तराखंड|उत्तराखण्ड|उत्तरांचल",
+        "West Bengal": "bengal|बंगाल"
+    };
+    var STATE_RE = Object.keys(ST).map(function (k) { return [k, R(ST[k])]; });
+
+    P.norm = function (t) { return String(t || "").normalize("NFC").toLowerCase().trim(); };
+
+    P.number = function (t) {
+        t = P.norm(t).replace(/,/g, "");
+        var m = t.match(/\d+(\.\d+)?/);
+        if (m) return parseFloat(m[0]);
+        var total = 0, found = false;
+        t.split(/[\s\-]+/).forEach(function (w) {
+            if (NUM[w] === undefined) return;
+            if (NUM[w] === 100 && total > 0) total *= 100; else total += NUM[w];
+            found = true;
+        });
+        return found ? total : null;
+    };
+
+    P.age = function (t) { var n = P.number(t); return (n !== null && n >= 1 && n <= 100) ? Math.round(n) : null; };
+
+    /* "2 lakh", "ढाई लाख", "one lakh fifty thousand", "monthly 10000" -> { value: yearly rupees, monthly: bool } */
+    var MULT = [[R("^(crore|करोड़|करोड|karod)"), 1e7], [R("^(lakh|lakhs|lac|लाख)"), 1e5], [R("^(thousand|hazaar|hazar|hajar|हज़ार|हजार)"), 1e3], [R("^(hundred|सौ|sau)$"), 100]];
+    P.income = function (t) {
+        var s = P.norm(t).replace(/,/g, ""), total = 0, cur = null, seen = false;
+        s.split(/[\s\-]+/).forEach(function (w) {
+            if (!w) return;
+            var mult = null;
+            MULT.forEach(function (m) { if (mult === null && m[0].test(w)) mult = m[1]; });
+            if (mult !== null) { total += (cur === null ? 1 : cur) * mult; cur = null; seen = true; }
+            else if (/\d/.test(w)) { cur = (cur || 0) + parseFloat(w.replace(/[^\d.]/g, "")); seen = true; }
+            else if (R("^(डेढ़|डेढ|dedh|derh)$").test(w)) { cur = 1.5; seen = true; }
+            else if (R("^(ढाई|dhai|adhai|aadhai)$").test(w)) { cur = 2.5; seen = true; }
+            else if (NUM[w] !== undefined) { cur = (cur || 0) + NUM[w]; seen = true; }
+        });
+        if (!seen) return null;
+        var v = Math.round(total + (cur || 0)), monthly = R("month|mahin|महीन|मासिक").test(s);
+        if (monthly) v *= 12;
+        return (isFinite(v) && v >= 0 && v <= 1e9) ? { value: v, monthly: monthly } : null;
+    };
+
+    P.state = function (t) {
+        var s = P.norm(t);
+        for (var i = 0; i < STATE_RE.length; i++) if (STATE_RE[i][1].test(s)) return STATE_RE[i][0];
+        return null;
+    };
+    P.gender = function (t) {
+        var s = P.norm(t);
+        if (R("female|woman|girl|lady|mahila|aurat|ladki|महिला|औरत|लड़की|स्त्री|बेटी").test(s)) return "female";
+        if (R("\\bmale\\b|\\bman\\b|boy|purush|aadmi|ladka|लड़का|पुरुष|पुरूष|आदमी|मर्द").test(s)) return "male";
+        return null;
+    };
+    P.cat = function (t) {
+        var s = P.norm(t);
+        if (R("scheduled tribe|अनुसूचित जनजाति|आदिवासी|adivasi|\\bs\\.?\\s?t\\b|एस\\s?टी|एसटी").test(s)) return "ST";
+        if (R("scheduled caste|अनुसूचित जाति|\\bs\\.?\\s?c\\b|एस\\s?सी|एससी|dalit|दलित").test(s)) return "SC";
+        if (R("obc|o\\.b\\.c|ओ\\s?बी\\s?सी|ओबीसी|पिछड़ा|backward").test(s)) return "OBC";
+        if (R("general|जनरल|सामान्य|unreserved").test(s)) return "General";
+        return null;
+    };
+    P.yesno = function (t) {
+        var s = P.norm(t);
+        if (R("\\b(no|nope|nahi|nahin|na)\\b|नहीं|नही").test(s)) return false;
+        if (R("\\b(yes|yeah|haan|han|ha|ji|ok|okay|sahi|correct)\\b|हाँ|हां|हा\\b|जी|ठीक|सही").test(s)) return true;
+        return null;
+    };
+    P.need = function (t) { var s = String(t || "").trim(); return s.length >= 3 ? s : null; };
+
+    /* Everything said in one sentence -> fields we could recognise */
+    P.free = function (t) {
+        var r = {}, s = P.norm(t), v;
+        if ((v = P.state(s))) r.state = v;
+        if ((v = P.gender(s))) r.gender = v;
+        if ((v = P.cat(s))) r.social_cat = v;
+        var am = s.match(R("(\\d{1,3})\\s*(?:years?|yrs?|saal|sal|वर्ष|साल)")) || s.match(R("(?:age|umar|umr|उम्र|आयु)\\D{0,12}(\\d{1,3})"));
+        if (am && +am[1] >= 1 && +am[1] <= 100) r.age = +am[1];
+        var im = s.match(R("(?:income|aay|aamdani|amdani|आमदनी|आय|कमाई)[^,.;]{0,40}")) ||
+                 s.match(R("(\\d+(?:\\.\\d+)?|डेढ़|डेढ|ढाई|dedh|dhai)\\s*(?:crore|करोड़|करोड|lakh|lac|लाख|thousand|hazaar|hazar|हज़ार|हजार)"));
+        if (im && (v = P.income(im[0] + (R("month|mahin|महीन|मासिक").test(s) ? " month" : "")))) r.income = v;
+        if (R("minority|अल्पसंख्यक|muslim|मुस्लिम|christian|ईसाई|sikh|सिख|buddhist|बौद्ध|jain|जैन|parsi").test(s)) r.minority = true;
+        if (R("disab|handicap|divyang|दिव्यांग|विकलांग|अपंग").test(s)) r.disability = true;
+        if (R("\\bbpl\\b|बी\\s?पी\\s?एल|गरीबी रेखा|below poverty").test(s)) r.bpl = true;
+        if (R("need|want|looking|require|chahiye|chahie|चाहिए|चाहिये|चाहता|चाहती|ज़रूरत|जरूरत|zaroorat|loan|लोन|scholar|business|व्यापार|खेती|इलाज|घर").test(s)) r.need = String(t).trim();
+        return r;
+    };
+    /* PARSERS END */
+
+    /* ---------- Voice assistant UI ---------- */
+    var card = $("voiceCard");
+    if (!card) return;
+    card.hidden = false;
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+        $("vNote").textContent = "Voice input works in Chrome, Edge or Safari. Please open this page there, or type your details below.";
+        $("vStart").disabled = true; $("vAll").disabled = true;
+        return;
+    }
+
+    var YN = [[true, "Yes / हाँ"], [false, "No / नहीं"]];
+    var Q = [
+        { id: "state", parse: P.state, hi: "आप किस राज्य में रहते हैं?", en: "Which state do you live in?" },
+        { id: "gender", parse: P.gender, hi: "आप पुरुष हैं या महिला?", en: "Are you male or female?", opts: [["male", "Male / पुरुष"], ["female", "Female / महिला"]] },
+        { id: "social_cat", parse: P.cat, hi: "आपकी श्रेणी क्या है? सामान्य, एस सी, एस टी, या ओ बी सी?", en: "Which category are you? General, S C, S T, or O B C?",
+          opts: [["General", "General"], ["SC", "SC"], ["ST", "ST"], ["OBC", "OBC"]] },
+        { id: "age", parse: P.age, hi: "आपकी उम्र कितनी है?", en: "How old are you?" },
+        { id: "income", parse: P.income, hi: "आपके परिवार की सालाना आमदनी कितनी है? जैसे, दो लाख रुपये।", en: "What is your family's yearly income? For example, two lakh rupees." },
+        { id: "need", parse: P.need, hi: "आपको किस चीज़ की ज़रूरत है? जैसे, कारोबार के लिए लोन, पढ़ाई, या घर।", en: "What do you need help with? For example, a business loan, education, or housing." },
+        { id: "minority", parse: P.yesno, opts: YN, hi: "क्या आप अल्पसंख्यक समुदाय से हैं? हाँ या नहीं बोलिए।", en: "Do you belong to a minority community? Say yes or no." },
+        { id: "disability", parse: P.yesno, opts: YN, hi: "क्या आपको कोई विकलांगता है? हाँ या नहीं बोलिए।", en: "Do you have a disability? Say yes or no." },
+        { id: "bpl", parse: P.yesno, opts: YN, hi: "क्या आपके पास बी पी एल कार्ड है? हाँ या नहीं बोलिए।", en: "Do you have a B P L card? Say yes or no." }
+    ];
+    var QBY = {}; Q.forEach(function (q) { QBY[q.id] = q; });
+
+    var T = {
+        retry: { hi: "माफ़ कीजिए, समझ नहीं आया। कृपया फिर से बोलिए।", en: "Sorry, I did not catch that. Please say it again." },
+        skip: { hi: "ठीक है, इसे छोड़ते हैं। आप इसे खुद भर सकते हैं।", en: "Okay, let us skip this one. You can fill it in yourself." },
+        heard: { hi: "सुना: ", en: "Heard: " },
+        silence: { hi: "कुछ सुनाई नहीं दिया।", en: "I could not hear anything." },
+        done: { hi: "आपकी जानकारी भर गई है। योजनाएँ खोजें? हाँ या नहीं बोलिए।", en: "Your details are filled in. Shall I find schemes? Say yes or no." },
+        review: { hi: "कृपया नीचे जानकारी देखें और खोजने वाला बटन दबाएँ।", en: "Please check the details below and press the find button." },
+        free: { hi: "अपने बारे में एक साथ बताइए: राज्य, उम्र, श्रेणी, आमदनी और आपको क्या चाहिए।", en: "Tell me about yourself in one go: your state, age, category, income and what you need." },
+        missing: { hi: "कुछ जानकारी बाकी है। मैं उसके बारे में पूछता हूँ।", en: "Some details are missing. Let me ask about them." },
+        denied: { hi: "माइक्रोफ़ोन की अनुमति बंद है। कृपया ब्राउज़र में माइक्रोफ़ोन चालू करें।", en: "Microphone permission is blocked. Please allow the microphone in your browser." }
+    };
+
+    var lang = "hi-IN", rec = null, active = false, denied = false, tokenN = 0, plan = [], idx = 0;
+    try { lang = localStorage.getItem("schemeLang") || "hi-IN"; } catch (e) {}
+    $("vLang").value = lang;
+    function L() { return lang.indexOf("hi") === 0 ? "hi" : "en"; }
+    function saveLang() { lang = $("vLang").value; try { localStorage.setItem("schemeLang", lang); } catch (e) {} }
+    $("vLang").addEventListener("change", saveLang);
+
+    function stopSpeech() { if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }
+    function speak(text, done) {
+        var fired = false, tm;
+        function fin() { if (fired) return; fired = true; clearTimeout(tm); if (done) done(); }
+        if (!("speechSynthesis" in window)) return fin();
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        u.lang = lang; u.rate = 0.9; u.onend = fin; u.onerror = fin;
+        tm = setTimeout(fin, 2500 + text.length * 110);      // safety net: some browsers never fire onend
+        window.speechSynthesis.speak(u);
+    }
+
+    function setMic(on) { $("vMic").classList.toggle("listening", on); $("vMicLabel").textContent = on ? (L() === "hi" ? "सुन रहा हूँ..." : "Listening...") : (L() === "hi" ? "बोलने के लिए दबाएँ" : "Tap to speak"); }
+    function stopRec() { if (rec) { rec.onresult = rec.onerror = rec.onend = null; try { rec.abort(); } catch (e) {} rec = null; } setMic(false); }
+
+    function listenOnce(cb) {
+        stopRec();
+        var got = false;
+        rec = new SR(); rec.lang = lang; rec.interimResults = false; rec.maxAlternatives = 3;
+        setMic(true);
+        rec.onresult = function (e) {
+            got = true;
+            var alts = []; for (var i = 0; i < e.results[0].length; i++) alts.push(e.results[0][i].transcript);
+            cb(alts);
+        };
+        rec.onerror = function (e) { if (e.error === "not-allowed" || e.error === "service-not-allowed") denied = true; };
+        rec.onend = function () { setMic(false); if (!got) cb(null); };
+        try { rec.start(); } catch (e) { cb(null); }
+    }
+
+    function stopAll() { active = false; tokenN++; stopRec(); stopSpeech(); $("vStage").hidden = true; }
+    function mark(f) { if (f.classList) { f.classList.add("voice-filled"); f.addEventListener("input", function once() { f.classList.remove("voice-filled"); f.removeEventListener("input", once); }); } }
+
+    function apply(q, v) {
+        var f = $(q.id);
+        if (q.id === "income") f.value = v.value;
+        else if (f.type === "checkbox") f.checked = !!v;
+        else f.value = v;
+        if (f.type !== "checkbox") mark(f);
+        f.dispatchEvent(new Event("input", { bubbles: true }));
+        f.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function echo(q, v) {
+        var hi = L() === "hi", ok = hi ? "ठीक है, " : "Got it, ";
+        if (q.id === "gender") return ok + (hi ? (v === "male" ? "पुरुष" : "महिला") : v);
+        if (q.id === "age") return ok + v + (hi ? " साल" : " years");
+        if (q.id === "income") return ok + "₹" + Number(v.value).toLocaleString("en-IN") + (hi ? " सालाना" : " per year") + (v.monthly ? (hi ? " (महीने की आमदनी को बारह से गुणा किया)" : " (your monthly income times twelve)") : "");
+        if (q.id === "need") return hi ? "ठीक है, नोट कर लिया।" : "Okay, noted.";
+        if (typeof v === "boolean") return ok + (v ? (hi ? "हाँ" : "yes") : (hi ? "नहीं" : "no"));
+        return ok + v;
+    }
+
+    function next() { if (!active) return; if (idx >= plan.length) return finish(); turn(plan[idx], 0); }
+    function turn(q, tries) {
+        var my = ++tokenN;
+        $("vQ").textContent = q[L()];
+        renderChips(q, my);
+        speak(tries === 0 ? q[L()] : T.retry[L()], function () {
+            if (my !== tokenN || !active) return;
+            listenOnce(function (alts) {
+                if (my !== tokenN || !active) return;
+                if (denied) { $("vNote").textContent = T.denied[L()]; speak(T.denied[L()]); return stopAll(); }
+                handle(q, alts, tries);
+            });
+        });
+    }
+    function handle(q, alts, tries) {
+        var v = null, heard = alts ? alts[0] : "";
+        if (alts) for (var i = 0; i < alts.length; i++) {
+            var r = q.parse(alts[i]);
+            if (r !== null && r !== undefined) { v = r; heard = alts[i]; break; }
+        }
+        $("vHeard").textContent = heard ? T.heard[L()] + heard : T.silence[L()];
+        if (v !== null) return accept(q, v);
+        if (tries < 1) return turn(q, tries + 1);
+        idx++; speak(T.skip[L()], next);
+    }
+    function accept(q, v) {
+        apply(q, v);
+        var my = ++tokenN;
+        speak(echo(q, v), function () { if (my !== tokenN || !active) return; idx++; next(); });
+    }
+    function renderChips(q, my) {
+        var box = $("vChips"); box.innerHTML = "";
+        (q.opts || []).forEach(function (o) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "chip"; b.textContent = o[1];
+            b.onclick = function () { if (my !== tokenN) return; tokenN++; stopRec(); stopSpeech(); accept(q, o[0]); };
+            box.appendChild(b);
+        });
+    }
+    function finish() {
+        var my = ++tokenN;
+        $("vQ").textContent = T.review[L()]; $("vChips").innerHTML = "";
+        speak(T.done[L()], function () {
+            if (my !== tokenN || !active) return;
+            listenOnce(function (alts) {
+                if (my !== tokenN || !active) return;
+                var yes = alts && alts.some(function (a) { return P.yesno(a) === true; });
+                if (yes) { var f = $("schemeForm"); if (f.requestSubmit) f.requestSubmit(); else f.submit(); }
+                else stopAll();
+            });
+        });
+    }
+
+    function open() { saveLang(); denied = false; $("vNote").textContent = ""; $("vStage").hidden = false; active = true; }
+    $("vStart").addEventListener("click", function () { open(); plan = Q.slice(); idx = 0; next(); });
+    $("vAll").addEventListener("click", function () {
+        open();
+        var my = ++tokenN;
+        $("vQ").textContent = T.free[L()]; $("vChips").innerHTML = "";
+        speak(T.free[L()], function () {
+            if (my !== tokenN || !active) return;
+            listenOnce(function (alts) {
+                if (my !== tokenN || !active) return;
+                if (denied) { $("vNote").textContent = T.denied[L()]; return stopAll(); }
+                if (!alts) { $("vHeard").textContent = T.silence[L()]; return; }
+                $("vHeard").textContent = T.heard[L()] + alts[0];
+                var r = P.free(alts[0]), got = {};
+                Object.keys(r).forEach(function (k) { if (QBY[k]) { apply(QBY[k], r[k]); got[k] = true; } });
+                plan = Q.filter(function (q) { return !got[q.id]; }); idx = 0;
+                if (!plan.length) return finish();
+                speak(T.missing[L()], next);
+            });
+        });
+    });
+    $("vMic").addEventListener("click", function () {
+        var q = plan[idx]; if (!active || !q) return;
+        var my = ++tokenN; stopRec(); stopSpeech();
+        listenOnce(function (alts) { if (my !== tokenN || !active) return; handle(q, alts, 0); });
+    });
+    $("vSkip").addEventListener("click", function () { if (!active) return; tokenN++; stopRec(); stopSpeech(); idx++; next(); });
+    $("vStop").addEventListener("click", stopAll);
+    window.addEventListener("beforeunload", stopSpeech);
+})();
 </script>
 
 </body>

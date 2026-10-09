@@ -1,7 +1,8 @@
 const path = require("path");
 const { getRecommendations } = require("../services/python_services");
 const { loadDocsLookup, attachDocuments } = require("../services/documentService");
-const { loadDatesLookup, attachDates } = require("../services/dateService");
+const { loadDatesLookup, attachDates } = require("../services/dateservice");
+const { expandNeed } = require("../services/needTranslator");
 
 // Absolute path, so it works no matter which folder the server is started from
 const CSV_PATH = path.join(__dirname, "..", "ml", "schemes_clean.csv");
@@ -38,7 +39,11 @@ function parseForm(body) {
         return { error: "Please enter a valid annual family income." };
     }
 
+    // Hindi / Hinglish words are turned into English keywords, so the trained TF-IDF can match them
+    const expanded = expandNeed(need);
+
     return {
+        keywords: expanded.keywords,
         data: {
             state: body.state,
             gender: body.gender,
@@ -48,7 +53,7 @@ function parseForm(body) {
             bpl: body.bpl === "true",
             age,
             income,
-            need,
+            need: expanded.text,
             top: 10,
             entrepreneur_only: ENTREPRENEUR_MODE === "always" ? true : BUSINESS_WORDS.test(need)
         }
@@ -107,6 +112,7 @@ const getRecommendationsController = async (req, res) => {
         return res.render("recommendations", {
             recommendations: schemes,
             master_docs: withDocs.master,
+            need_keywords: parsed.keywords,
             profile: req.body
         });
 
