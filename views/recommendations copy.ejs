@@ -109,30 +109,6 @@
         .btn-soft { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); border-radius: 10px; font-weight: 600; }
         .btn-soft:hover { border-color: var(--saffron); color: var(--ink); }
 
-        .docs-block {
-            background: #f7f9fc; border: 1px solid var(--line); border-radius: 14px;
-            padding: 14px 16px; margin-top: 16px;
-        }
-        .docs-block h3 { font-size: .98rem; font-weight: 700; margin: 0; }
-        .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 16px; }
-        .for-you-title { font-size: .82rem; font-weight: 700; color: var(--saffron-dark); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .03em; }
-        .doc-row.suggested span { color: var(--ink-soft); }
-        .doc-row:has(input:checked) span { text-decoration: line-through; color: var(--muted); }
-
-        .master {
-            background: #fff; border: 1px solid var(--saffron); border-radius: 18px;
-            padding: 20px 22px; margin-top: 22px;
-        }
-        .master-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 14px; }
-        .master-item {
-            display: flex; align-items: center; gap: 10px; cursor: pointer;
-            border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
-        }
-        .master-item input { accent-color: var(--green); width: 1.1em; height: 1.1em; flex: none; }
-        .master-item:has(input:checked) { background: #e9f6ef; border-color: var(--green); }
-        .mname { font-weight: 600; flex: 1; }
-        .mcount { font-size: .78rem; color: var(--muted); }
-
         .near {
             background: #fff; border: 1px dashed var(--saffron); border-radius: 16px; padding: 18px 22px; margin-top: 28px;
         }
@@ -155,7 +131,6 @@
     var list = (typeof recommendations !== "undefined" && recommendations) ? recommendations : [];
     var hasProfile = (typeof profile !== "undefined" && profile);
     var near = (typeof near_misses !== "undefined" && near_misses) ? near_misses : [];
-    var master = (typeof master_docs !== "undefined" && master_docs) ? master_docs : [];
 
     function pct(s) { var n = Number(s); if (isNaN(n)) n = 0; return Math.max(0, Math.min(100, n)); }
     function money(n) { return "₹" + Number(n).toLocaleString("en-IN"); }
@@ -218,27 +193,6 @@
             </div>
         </div>
 
-        <!-- Master document checklist -->
-        <% if (master.length) { %>
-        <section class="master no-break">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div>
-                    <h2 class="h5 mb-1">Your document checklist</h2>
-                    <div class="meta">Arrange these first. They are needed across your matched schemes.</div>
-                </div>
-            </div>
-            <div class="master-grid">
-                <% master.forEach(function (m) { %>
-                    <label class="master-item">
-                        <input type="checkbox">
-                        <span class="mname"><%= m.name %></span>
-                        <span class="mcount">needed in <%= m.count %> of <%= m.total %></span>
-                    </label>
-                <% }) %>
-            </div>
-        </section>
-        <% } %>
-
         <!-- Toolbar -->
         <div class="toolbar no-print" role="group" aria-label="Filters">
             <button class="fchip active" data-filter="all">All</button>
@@ -261,9 +215,8 @@
             var isCentral = String(scheme.level || "").toLowerCase() === "central";
             var reasons = Array.isArray(scheme.reasons) ? scheme.reasons : [];
             var docs = Array.isArray(scheme.documents) ? scheme.documents : [];
-            var docsProfile = Array.isArray(scheme.docs_profile) ? scheme.docs_profile : [];
             var steps = Array.isArray(scheme.apply_steps) ? scheme.apply_steps : [];
-            var hasDetails = reasons.length || steps.length || scheme.description;
+            var hasDetails = reasons.length || docs.length || steps.length || scheme.description;
         %>
             <article class="scheme-card <%= index === 0 ? 'top' : '' %>"
                      data-level="<%= isCentral ? 'central' : 'state' %>"
@@ -300,33 +253,6 @@
                     </div>
                 </div>
 
-                <!-- Required documents (always visible) -->
-                <div class="docs-block" data-docs>
-                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
-                        <h3>Documents required <span class="ready" data-ready></span></h3>
-                    </div>
-                    <% if (docs.length) { %>
-                        <div class="doc-grid">
-                            <% docs.forEach(function (d) { %>
-                                <label class="doc-row"><input type="checkbox"> <span><%= d %></span></label>
-                            <% }) %>
-                        </div>
-                    <% } %>
-                    <% if (docsProfile.length) { %>
-                        <div class="for-you-title"><%= docs.length ? "Also keep ready (based on your profile)" : "Commonly needed (official list not in our data)" %></div>
-                        <div class="doc-grid">
-                            <% docsProfile.forEach(function (d) { %>
-                                <label class="doc-row suggested"><input type="checkbox"> <span><%= d %></span></label>
-                            <% }) %>
-                        </div>
-                    <% } %>
-                    <% if (scheme.docs_fallback) { %>
-                        <div class="meta mt-2">Please confirm the exact list on the official page.</div>
-                    <% } else { %>
-                        <div class="meta mt-2">Tick the documents you already have.</div>
-                    <% } %>
-                </div>
-
                 <% if (hasDetails) { %>
                 <div class="collapse" id="d<%= index %>">
                     <div class="details-box">
@@ -334,7 +260,7 @@
 
                         <div class="row g-4">
                             <% if (reasons.length) { %>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h3>Why you are eligible</h3>
                                 <ul class="check-list">
                                     <% reasons.forEach(function (r) { %><li><%= r %></li><% }) %>
@@ -342,8 +268,18 @@
                             </div>
                             <% } %>
 
+                            <% if (docs.length) { %>
+                            <div class="col-md-4" data-docs>
+                                <h3>Documents needed <span class="ready" data-ready></span></h3>
+                                <% docs.forEach(function (d, i) { %>
+                                    <label class="doc-row"><input type="checkbox"> <%= d %></label>
+                                <% }) %>
+                                <div class="meta">Tick what you already have.</div>
+                            </div>
+                            <% } %>
+
                             <% if (steps.length) { %>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h3>How to apply</h3>
                                 <ol class="steps-list">
                                     <% steps.forEach(function (s) { %><li><%= s %></li><% }) %>
@@ -428,9 +364,7 @@
     // Share + listen
     cards.forEach(function (c) {
         c.querySelector("[data-share]").addEventListener("click", function () {
-            var docs = [].map.call(c.querySelectorAll(".doc-row"), function (l) { return "- " + l.textContent.trim(); });
-            var text = c.dataset.name + " (" + Number(c.dataset.score).toFixed(0) + "% match)\n" +
-                (docs.length ? "Documents needed:\n" + docs.join("\n") + "\n" : "") + c.dataset.url;
+            var text = c.dataset.name + " (" + Number(c.dataset.score).toFixed(0) + "% match)\n" + c.dataset.url;
             window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
         });
         c.querySelector("[data-speak]").addEventListener("click", function () {

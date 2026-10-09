@@ -109,6 +109,50 @@
         .btn-soft { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); border-radius: 10px; font-weight: 600; }
         .btn-soft:hover { border-color: var(--saffron); color: var(--ink); }
 
+        .docs-block {
+            background: #f7f9fc; border: 1px solid var(--line); border-radius: 14px;
+            padding: 14px 16px; margin-top: 16px;
+        }
+        .docs-block h3 { font-size: .98rem; font-weight: 700; margin: 0; }
+        .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 16px; }
+        .for-you-title { font-size: .82rem; font-weight: 700; color: var(--saffron-dark); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .03em; }
+        .doc-row.suggested span { color: var(--ink-soft); }
+        .doc-row:has(input:checked) span { text-decoration: line-through; color: var(--muted); }
+
+        .master {
+            background: #fff; border: 1px solid var(--saffron); border-radius: 18px;
+            padding: 20px 22px; margin-top: 22px;
+        }
+        .master-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 14px; }
+        .master-item {
+            display: flex; align-items: center; gap: 10px; cursor: pointer;
+            border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+        }
+        .master-item input { accent-color: var(--green); width: 1.1em; height: 1.1em; flex: none; }
+        .master-item:has(input:checked) { background: #e9f6ef; border-color: var(--green); }
+        .mname { font-weight: 600; flex: 1; }
+        .mcount { font-size: .78rem; color: var(--muted); }
+
+        .stat.urgent { background: #fde4e1; border-color: #e9a29b; }
+        .stat.urgent .num { color: #b3261e; }
+        .tag.closed { background: #eceff4; color: var(--muted); }
+        .tag.upcoming { background: #e3ecfb; color: #1d4ea3; }
+        .dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 16px; }
+        .date-item { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+        .dl { display: block; font-size: .76rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+        .dv { font-weight: 600; }
+        .st-open, .st-always { color: var(--green); }
+        .st-closing { color: #b3261e; }
+        .st-upcoming { color: #1d4ea3; }
+        .st-closed, .st-unknown { color: var(--muted); }
+        .btn-save.saved { background: #fff4e6; border-color: var(--saffron); color: var(--saffron-dark); }
+        .toast-lite {
+            position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+            background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 12px;
+            font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 50;
+        }
+        .toast-lite.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
         .near {
             background: #fff; border: 1px dashed var(--saffron); border-radius: 16px; padding: 18px 22px; margin-top: 28px;
         }
@@ -119,7 +163,7 @@
             body { background: #fff; }
             .hero { background: #fff; color: #000; border: 1px solid #000; }
             .hero p, .profile-chip { color: #000; }
-            .no-print, .toolbar { display: none !important; }
+            .no-print, .toolbar, .toast-lite { display: none !important; }
             .scheme-card { break-inside: avoid; }
             .collapse { display: block !important; }
         }
@@ -131,14 +175,34 @@
     var list = (typeof recommendations !== "undefined" && recommendations) ? recommendations : [];
     var hasProfile = (typeof profile !== "undefined" && profile);
     var near = (typeof near_misses !== "undefined" && near_misses) ? near_misses : [];
+    var master = (typeof master_docs !== "undefined" && master_docs) ? master_docs : [];
 
+    function safeUrl(u) { return /^https?:\/\//i.test(String(u || "")) ? String(u) : ""; }
     function pct(s) { var n = Number(s); if (isNaN(n)) n = 0; return Math.max(0, Math.min(100, n)); }
     function money(n) { return "₹" + Number(n).toLocaleString("en-IN"); }
+
+    function fmt(iso) {
+        if (!iso) return "";
+        var d = new Date(iso + "T00:00:00Z");
+        return isNaN(d) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+    }
+    function dstate(sc) { return (sc && sc.date_status && sc.date_status.state) || "unknown"; }
+    function plural(n, w) { return n + " " + w + (n === 1 ? "" : "s"); }
+    function dlabel(ds) {
+        var n = ds.days || 0;
+        if (ds.state === "open") return "Open, " + plural(n, "day") + " left";
+        if (ds.state === "closing") return n === 0 ? "Closes today" : "Closing in " + plural(n, "day");
+        if (ds.state === "upcoming") return "Opens in " + plural(n, "day");
+        if (ds.state === "closed") return "Closed " + plural(n, "day") + " ago";
+        if (ds.state === "always") return "Open all year";
+        return "Check official page";
+    }
+    var closingCount = list.filter(function (s) { return dstate(s) === "closing"; }).length;
 
     var best = list.length ? Math.max.apply(null, list.map(function (s) { return pct(s.score); })) : 0;
     var central = list.filter(function (s) { return String(s.level).toLowerCase() === "central"; }).length;
     var stateCount = list.length - central;
-    var totalBenefit = list.reduce(function (sum, s) { var b = Number(s.benefit_amount); return sum + (isNaN(b) ? 0 : b); }, 0);
+    var totalBenefit = list.reduce(function (sum, s) { if (dstate(s) === "closed") return sum; var b = Number(s.benefit_amount); return sum + (isNaN(b) ? 0 : b); }, 0);
 %>
 
 <div class="wrap">
@@ -158,7 +222,10 @@
                     </div>
                 <% } %>
             </div>
-            <a href="/recommend" class="btn btn-hero no-print">Search again</a>
+            <div class="d-flex gap-2 no-print">
+                <a href="/wishlist" class="btn btn-hero">My wishlist (<span id="wlCount">0</span>)</a>
+                <a href="/recommend" class="btn btn-hero">Search again</a>
+            </div>
         </div>
     </section>
 
@@ -175,34 +242,62 @@
         <!-- Stats -->
         <div class="row g-3 mt-1">
             <% if (totalBenefit > 0) { %>
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md">
                 <div class="stat benefit">
                     <div class="num"><%= money(totalBenefit) %></div>
                     <div class="lbl">Total benefit you can claim</div>
                 </div>
             </div>
             <% } %>
-            <div class="col-6 col-md-3">
+            <% if (closingCount > 0) { %>
+            <div class="col-6 col-md">
+                <div class="stat urgent"><div class="num"><%= closingCount %></div><div class="lbl">Closing within 15 days</div></div>
+            </div>
+            <% } %>
+            <div class="col-6 col-md">
                 <div class="stat"><div class="num"><%= list.length %></div><div class="lbl">Schemes matched</div></div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md">
                 <div class="stat"><div class="num"><%= best.toFixed(0) %>%</div><div class="lbl">Best match score</div></div>
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md">
                 <div class="stat"><div class="num"><%= central %> / <%= stateCount %></div><div class="lbl">Central / State schemes</div></div>
             </div>
         </div>
+
+        <!-- Master document checklist -->
+        <% if (master.length) { %>
+        <section class="master">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2 class="h5 mb-1">Your document checklist</h2>
+                    <div class="meta">Arrange these first. They are needed across your matched schemes.</div>
+                </div>
+            </div>
+            <div class="master-grid">
+                <% master.forEach(function (m) { %>
+                    <label class="master-item">
+                        <input type="checkbox">
+                        <span class="mname"><%= m.name %></span>
+                        <span class="mcount">needed in <%= m.count %> of <%= m.total %></span>
+                    </label>
+                <% }) %>
+            </div>
+        </section>
+        <% } %>
 
         <!-- Toolbar -->
         <div class="toolbar no-print" role="group" aria-label="Filters">
             <button class="fchip active" data-filter="all">All</button>
             <button class="fchip" data-filter="central">Central</button>
             <button class="fchip" data-filter="state">State</button>
+            <button class="fchip" data-filter="open">Open now</button>
             <button class="fchip" data-filter="online">Apply online</button>
             <span class="spacer"></span>
             <select id="sortBy" class="form-select form-select-sm" aria-label="Sort schemes">
                 <option value="score">Best match first</option>
                 <option value="benefit">Highest benefit first</option>
+                <option value="deadline">Closing soon first</option>
             </select>
             <button class="btn btn-soft btn-sm" onclick="window.print()">Save as PDF</button>
         </div>
@@ -215,8 +310,14 @@
             var isCentral = String(scheme.level || "").toLowerCase() === "central";
             var reasons = Array.isArray(scheme.reasons) ? scheme.reasons : [];
             var docs = Array.isArray(scheme.documents) ? scheme.documents : [];
+            var docsProfile = Array.isArray(scheme.docs_profile) ? scheme.docs_profile : [];
             var steps = Array.isArray(scheme.apply_steps) ? scheme.apply_steps : [];
-            var hasDetails = reasons.length || docs.length || steps.length || scheme.description;
+            var hasDetails = reasons.length || steps.length || scheme.description;
+            var link = safeUrl(scheme.source_url);
+            var ds = scheme.date_status || { state: "unknown" };
+            var startFmt = fmt(scheme.start_date), endFmt = fmt(scheme.end_date);
+            var openNow = ["closed", "upcoming"].indexOf(ds.state) === -1;
+            var sortDays = (ds.state === "open" || ds.state === "closing") ? ds.days : (ds.state === "always" ? 99998 : 99999);
         %>
             <article class="scheme-card <%= index === 0 ? 'top' : '' %>"
                      data-level="<%= isCentral ? 'central' : 'state' %>"
@@ -224,7 +325,14 @@
                      data-score="<%= score %>"
                      data-benefit="<%= Number(scheme.benefit_amount) || 0 %>"
                      data-name="<%= scheme.scheme_name %>"
-                     data-url="<%= scheme.source_url %>">
+                     data-url="<%= link %>"
+                     data-state="<%= ds.state %>"
+                     data-open="<%= openNow ? '1' : '0' %>"
+                     data-deadline="<%= sortDays %>"
+                     data-start="<%= scheme.start_date || '' %>"
+                     data-end="<%= scheme.end_date || '' %>"
+                     data-level-label="<%= scheme.level %>"
+                     data-type="<%= scheme.benefit_type %>">
 
                 <div class="d-flex gap-3 align-items-start">
                     <div class="ring" style="--p: <%= score %>" role="img" aria-label="Match score <%= score.toFixed(0) %> percent">
@@ -235,22 +343,58 @@
                         <div>
                             <% if (index === 0) { %><span class="tag best">Best match</span><% } %>
                             <% if (isOnline) { %><span class="tag easy">Apply online</span><% } %>
-                            <% if (scheme.last_date) { %><span class="tag soon">Last date: <%= scheme.last_date %></span><% } %>
+                            <% if (ds.state === "closing") { %><span class="tag soon"><%= dlabel(ds) %></span><% } %>
+                            <% if (ds.state === "closed") { %><span class="tag closed">Closed</span><% } %>
+                            <% if (ds.state === "upcoming") { %><span class="tag upcoming"><%= dlabel(ds) %></span><% } %>
                         </div>
 
                         <h2 class="scheme-title"><%= scheme.scheme_name %></h2>
 
                         <div>
-                            <span class="tag"><%= scheme.level %></span>
-                            <span class="tag"><%= scheme.benefit_type %></span>
-                            <span class="tag"><%= scheme.app_mode %></span>
+                            <% if (scheme.level) { %><span class="tag"><%= scheme.level %></span><% } %>
+                            <% if (scheme.benefit_type) { %><span class="tag"><%= scheme.benefit_type %></span><% } %>
+                            <% if (scheme.app_mode) { %><span class="tag"><%= scheme.app_mode %></span><% } %>
                         </div>
-                        <div class="meta">Applicable in: <%= scheme.state %></div>
+                        <% if (scheme.state) { %><div class="meta">Applicable in: <%= scheme.state %></div><% } %>
 
                         <% if (Number(scheme.benefit_amount) > 0) { %>
                             <div class="benefit-amt mt-2">Benefit: up to <%= money(scheme.benefit_amount) %></div>
                         <% } %>
                     </div>
+                </div>
+
+                <!-- Start and end dates (from dataset) -->
+                <div class="dates">
+                    <div class="date-item"><span class="dl">Starts</span><span class="dv"><%= startFmt || "Not specified" %></span></div>
+                    <div class="date-item"><span class="dl">Ends</span><span class="dv"><%= endFmt || (ds.state === "always" ? "No fixed end date" : "Not specified") %></span></div>
+                    <div class="date-item"><span class="dl">Status</span><span class="dv st-<%= ds.state %>"><%= dlabel(ds) %></span></div>
+                </div>
+
+                <!-- Required documents (always visible) -->
+                <div class="docs-block" data-docs>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                        <h3>Documents required <span class="ready" data-ready></span></h3>
+                    </div>
+                    <% if (docs.length) { %>
+                        <div class="doc-grid">
+                            <% docs.forEach(function (d) { %>
+                                <label class="doc-row"><input type="checkbox"> <span><%= d %></span></label>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                    <% if (docsProfile.length) { %>
+                        <div class="for-you-title"><%= docs.length ? "Also keep ready (based on your profile)" : "Commonly needed (official list not in our data)" %></div>
+                        <div class="doc-grid">
+                            <% docsProfile.forEach(function (d) { %>
+                                <label class="doc-row suggested"><input type="checkbox"> <span><%= d %></span></label>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                    <% if (scheme.docs_fallback) { %>
+                        <div class="meta mt-2">Please confirm the exact list on the official page.</div>
+                    <% } else { %>
+                        <div class="meta mt-2">Tick the documents you already have.</div>
+                    <% } %>
                 </div>
 
                 <% if (hasDetails) { %>
@@ -260,7 +404,7 @@
 
                         <div class="row g-4">
                             <% if (reasons.length) { %>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <h3>Why you are eligible</h3>
                                 <ul class="check-list">
                                     <% reasons.forEach(function (r) { %><li><%= r %></li><% }) %>
@@ -268,18 +412,8 @@
                             </div>
                             <% } %>
 
-                            <% if (docs.length) { %>
-                            <div class="col-md-4" data-docs>
-                                <h3>Documents needed <span class="ready" data-ready></span></h3>
-                                <% docs.forEach(function (d, i) { %>
-                                    <label class="doc-row"><input type="checkbox"> <%= d %></label>
-                                <% }) %>
-                                <div class="meta">Tick what you already have.</div>
-                            </div>
-                            <% } %>
-
                             <% if (steps.length) { %>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <h3>How to apply</h3>
                                 <ol class="steps-list">
                                     <% steps.forEach(function (s) { %><li><%= s %></li><% }) %>
@@ -292,10 +426,11 @@
                 <% } %>
 
                 <div class="d-flex flex-wrap gap-2 mt-3 no-print">
-                    <a href="<%= scheme.source_url %>" target="_blank" rel="noopener noreferrer" class="btn btn-apply">View &amp; apply</a>
+                    <% if (link) { %><a href="<%= link %>" target="_blank" rel="noopener noreferrer" class="btn btn-apply">View &amp; apply</a><% } %>
                     <% if (hasDetails) { %>
                         <button class="btn btn-soft" data-bs-toggle="collapse" data-bs-target="#d<%= index %>" aria-expanded="false">Details</button>
                     <% } %>
+                    <button class="btn btn-soft btn-save" data-save aria-pressed="false">&#9734; <%= ds.state === "closed" ? "Remind me when it reopens" : "Remind me later" %></button>
                     <button class="btn btn-soft" data-speak>Listen</button>
                     <button class="btn btn-soft" data-share>Share on WhatsApp</button>
                 </div>
@@ -322,7 +457,60 @@
     <% } %>
 </div>
 
+<div class="toast-lite" id="toast" role="status" aria-live="polite"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* Wishlist: saved on this device, official page is watched by the server for new circulars */
+(function () {
+    var KEY = "schemeWishlist";
+    function read() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
+    function write(a) { try { localStorage.setItem(KEY, JSON.stringify(a)); } catch (e) {} }
+    var toast = document.getElementById("toast"), timer;
+    function say(msg) { toast.textContent = msg; toast.classList.add("show"); clearTimeout(timer); timer = setTimeout(function () { toast.classList.remove("show"); }, 2600); }
+
+    function refresh() {
+        var list = read(), counter = document.getElementById("wlCount");
+        if (counter) counter.textContent = list.length;
+        document.querySelectorAll(".scheme-card").forEach(function (c) {
+            var b = c.querySelector("[data-save]"); if (!b) return;
+            var id = c.dataset.url || c.dataset.name;
+            var saved = list.some(function (i) { return i.id === id; });
+            b.classList.toggle("saved", saved);
+            b.setAttribute("aria-pressed", saved);
+            var idle = c.dataset.state === "closed" ? "Remind me when it reopens" : "Remind me later";
+            b.innerHTML = saved ? "&#9733; Reminder set" : "&#9734; " + idle;
+        });
+    }
+
+    document.querySelectorAll(".scheme-card").forEach(function (c) {
+        var b = c.querySelector("[data-save]"); if (!b) return;
+        b.addEventListener("click", function () {
+            var id = c.dataset.url || c.dataset.name, list = read();
+            var idx = list.findIndex(function (i) { return i.id === id; });
+            if (idx > -1) { list.splice(idx, 1); write(list); refresh(); say("Reminder removed"); return; }
+
+            var item = { id: id, url: c.dataset.url, name: c.dataset.name, level: c.dataset.levelLabel,
+                         type: c.dataset.type, score: Number(c.dataset.score), savedAt: Date.now(), seenHash: null,
+                         start: c.dataset.start || null, end: c.dataset.end || null };
+            list.push(item); write(list); refresh();
+            say("Added to wishlist. We will track its dates and new circulars.");
+
+            // Register the page with the watcher and remember its current state as the baseline
+            if (item.url) {
+                fetch("/api/wishlist/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ urls: [item.url] }) })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        var st = d && d[item.url]; if (!st || !st.hash) return;
+                        var cur = read(), me = cur.find(function (i) { return i.id === id; });
+                        if (me && !me.seenHash) { me.seenHash = st.hash; write(cur); }
+                    }).catch(function () {});
+            }
+        });
+    });
+    refresh();
+})();
+</script>
 <script>
 (function () {
     var box = document.getElementById("cards");
@@ -336,7 +524,8 @@
             chip.classList.add("active");
             var f = chip.dataset.filter;
             cards.forEach(function (c) {
-                var show = f === "all" || c.dataset.level === f || (f === "online" && c.dataset.online === "1");
+                var show = f === "all" || c.dataset.level === f ||
+                           (f === "online" && c.dataset.online === "1") || (f === "open" && c.dataset.open === "1");
                 c.style.display = show ? "" : "none";
             });
         });
@@ -345,7 +534,10 @@
     // Sorting
     document.getElementById("sortBy").addEventListener("change", function (e) {
         var key = e.target.value;
-        cards.sort(function (a, b) { return Number(b.dataset[key]) - Number(a.dataset[key]); })
+        cards.sort(function (a, b) {
+            return key === "deadline" ? Number(a.dataset.deadline) - Number(b.dataset.deadline)
+                                      : Number(b.dataset[key]) - Number(a.dataset[key]);
+        })
              .forEach(function (c) { box.appendChild(c); });
     });
 
@@ -364,7 +556,10 @@
     // Share + listen
     cards.forEach(function (c) {
         c.querySelector("[data-share]").addEventListener("click", function () {
-            var text = c.dataset.name + " (" + Number(c.dataset.score).toFixed(0) + "% match)\n" + c.dataset.url;
+            var docs = [].map.call(c.querySelectorAll(".doc-row"), function (l) { return "- " + l.textContent.trim(); });
+            var last = c.dataset.end ? "Last date: " + new Date(c.dataset.end + "T00:00:00Z").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) + "\n" : "";
+            var text = c.dataset.name + " (" + Number(c.dataset.score).toFixed(0) + "% match)\n" + last +
+                (docs.length ? "Documents needed:\n" + docs.join("\n") + "\n" : "") + c.dataset.url;
             window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank", "noopener");
         });
         c.querySelector("[data-speak]").addEventListener("click", function () {
