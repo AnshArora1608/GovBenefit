@@ -36,6 +36,13 @@
   - Automated background crawler monitors official government scheme pages for new circulars, guidelines, amendments, and notifications using Cheerio.
   - Email notification subscription powered by Nodemailer.
 
+- **🛡️ GovBenefit Form Mentor (Browser Extension & Service)**
+  - Injected assistant that explains complex government application form fields, required formats, and reasons in plain language.
+  - Plain-language breakdown of confusing dropdown options (e.g. _KVIC vs KVIB vs DIC_ agency selection, legal constitution, special subsidy categories).
+  - Matches the citizen's saved profile and provides safe, user-confirmed `[Use this]` autofilling.
+  - **Strict Human-Action Guardrails**: Explicitly prevents automated interception of sensitive steps (CAPTCHA, OTP, legal declarations, final submission).
+  - Includes a full high-fidelity PMEGP Application Form Sandbox (`/government-portal/pmegp-application`).
+
 ---
 
 ## 🏗️ Architecture & Project Structure
@@ -43,35 +50,38 @@
 ```text
 GovBenefit/
 ├── controllers/
+│   ├── mentorController.js          # Form Mentor inspection, contextual Q&A, and mock portal
 │   ├── profileController.js         # Handles profile collection, JSON persistence, and dashboard
 │   └── recommendationController.js  # Orchestrates form parsing, ML scoring, and views
 ├── data/
+│   ├── knowledge/
+│   │   └── pmegp_form.json          # Form rules, option meanings & guidance for PMEGP
 │   ├── profiles.json                # Stored citizen profiles and scheme applications (JSON)
 │   └── watch.json                   # Monitored scheme URLs, content hashes, and subscribers
-├── ml/
-│   ├── benefit_type_model.pkl       # Logistic regression model for benefit types
-│   ├── category_svm_model.pkl       # Linear SVM model for scheme categorization
-│   ├── clean.py                     # Data cleaning pipeline for raw schemes dataset
-│   ├── eda.py                       # Exploratory data analysis scripts
-│   ├── eda1.png, eda2.png           # EDA charts & distribution visualizations
-│   ├── entrepreneur_rf_model.pkl   # Random Forest model for entrepreneur scheme detection
-│   ├── ml.py                        # Training pipeline for ML models
-│   ├── recommend.py                 # Core recommender logic (filters + TF-IDF + models)
-│   ├── recommend_service.py         # Stdio JSON bridge for Node.js subprocess
-│   └── schemes_clean.csv            # Cleaned dataset of government schemes
+├── extension/                       # Chrome Extension (Manifest V3)
+│   ├── background.js                # Extension service worker
+│   ├── content.js                   # DOM form inspector & injected assistant script
+│   ├── manifest.json                # Manifest V3 extension configuration
+│   ├── mentor.css                   # Floating assistant styling & highlight classes
+│   ├── popup.html                   # Extension toolbar popup
+│   └── popup.js                     # Popup script displaying connection & profile info
 ├── routes/
+│   ├── mentorRoutes.js              # Routes for Mentor inspection APIs and Sandbox portal
 │   ├── profileRoutes.js             # Routes for profile data collection and dashboard
 │   ├── recommendationRoutes.js      # Routes for recommendation form and submission
 │   └── wishlist.js                  # Routes for wishlist and portal watcher API
 ├── services/
 │   ├── dateservice.js               # Application date normalization and deadline alerts
 │   ├── documentService.js           # Required documents parser and master checklist builder
+│   ├── mentorService.js             # Form Mentor engine, boundary checks & contextual Q&A
 │   ├── needTranslator.js            # Hindi / Hinglish colloquial lexicon translator
+│   ├── profileMapper.js             # DOM form inputs to GovBenefit profile mapping engine
 │   ├── profileService.js            # JSON persistence service for citizen profiles
 │   ├── python_services.js           # Subprocess wrapper executing Python ML scripts
 │   └── watcher.js                   # Web change watcher and notification service
 ├── views/
 │   ├── dashboard.ejs                # Citizen dashboard showing saved profile and applied schemes
+│   ├── mock_pmegp_form.ejs          # Official PMEGP application form sandbox for Form Mentor
 │   ├── profile.ejs                  # Multi-fieldset profile collection form with Save Details
 │   ├── recommendation.ejs           # Main eligibility input form with voice search
 │   ├── recommendations.ejs          # Ranked recommendations results page (with View & apply)
@@ -146,18 +156,23 @@ Once started, open your browser and navigate to:
 
 ## 📡 Routes & API Endpoints
 
-| Method | Endpoint                  | Description                                                         |
-| :----- | :------------------------ | :------------------------------------------------------------------ |
-| `GET`  | `/`                       | Renders the citizen recommendation form                             |
-| `GET`  | `/recommend`              | Displays the recommendation form                                    |
-| `POST` | `/recommend`              | Processes citizen input and returns matched schemes                 |
-| `GET`  | `/profile`                | Profile data collection form (structured in multi-fieldsets)        |
-| `POST` | `/profile`                | Saves profile details to JSON file and redirects to `/dashboard`    |
-| `GET`  | `/dashboard`              | Citizen dashboard displaying saved profile & applied scheme records |
-| `GET`  | `/api/profile/export`     | Download/export saved citizen profile in JSON format                |
-| `GET`  | `/wishlist`               | View bookmarked schemes and official portal updates                 |
-| `POST` | `/api/wishlist/status`    | Fetches live change/circular status for watched scheme URLs         |
-| `POST` | `/api/wishlist/subscribe` | Subscribes an email to receive circular updates for saved schemes   |
+| Method | Endpoint                               | Description                                                         |
+| :----- | :------------------------------------- | :------------------------------------------------------------------ |
+| `GET`  | `/`                                    | Renders the citizen recommendation form                             |
+| `GET`  | `/recommend`                           | Displays the recommendation form                                    |
+| `POST` | `/recommend`                           | Processes citizen input and returns matched schemes                 |
+| `GET`  | `/profile`                             | Profile data collection form (structured in multi-fieldsets)        |
+| `POST` | `/profile`                             | Saves profile details to JSON file and redirects to `/dashboard`    |
+| `GET`  | `/dashboard`                           | Citizen dashboard displaying saved profile & applied scheme records |
+| `GET`  | `/api/profile/export`                  | Download/export saved citizen profile in JSON format                |
+| `POST` | `/api/mentor/inspect-field`            | Inspects form field, returns plain explanation & profile autofill   |
+| `POST` | `/api/mentor/ask`                      | Contextual AI Q&A answering citizen questions on form fields        |
+| `GET`  | `/api/mentor/profile`                  | Retrieves active citizen profile for browser extension              |
+| `GET`  | `/api/mentor/knowledge/:id`            | Returns structured knowledge & option dictionary for scheme form    |
+| `GET`  | `/government-portal/pmegp-application` | High-fidelity PMEGP Application Form Sandbox with live Mentor       |
+| `GET`  | `/wishlist`                            | View bookmarked schemes and official portal updates                 |
+| `POST` | `/api/wishlist/status`                 | Fetches live change/circular status for watched scheme URLs         |
+| `POST` | `/api/wishlist/subscribe`              | Subscribes an email to receive circular updates for saved schemes   |
 
 ---
 

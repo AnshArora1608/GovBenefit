@@ -18,6 +18,7 @@ app.use(cookieParser());
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/extension', express.static(path.join(__dirname, 'extension')));
 
 // Home
 app.get('/', (req, res) => {
@@ -26,10 +27,12 @@ app.get('/', (req, res) => {
 
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const mentorRoutes = require('./routes/mentorRoutes');
 
 app.use(require('./routes/wishlist'));
 app.use('/recommend', recommendationRoutes);
 app.use(profileRoutes);
+app.use(mentorRoutes);
 // Server
 const PORT = process.env.PORT || 8000;
 

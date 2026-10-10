@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "GovBenefit Form Mentor",
+  "version": "1.0.0",
+  "description": "Personalized assistant helping citizens understand and fill government scheme forms with human-action guardrails.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "https://*.gov.in/*",
+    "https://*.nic.in/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "GovBenefit Form Mentor"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:8000/*",
+        "https://*.gov.in/*",
+        "https://*.nic.in/*"
+      ],
+      "js": ["content.js"],
+      "css": ["mentor.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

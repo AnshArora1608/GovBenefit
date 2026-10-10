@@ -1,0 +1,337 @@
+/* GovBenefit Form Mentor - Floating Assistant Styles */
+
+:root {
+  --gbf-ink: #14213d;
+  --gbf-saffron: #e8871e;
+  --gbf-saffron-dark: #c76d0c;
+  --gbf-green: #1f7a4d;
+  --gbf-bg: #f8fafd;
+  --gbf-border: #d9dfe9;
+  --gbf-muted: #5b6678;
+}
+
+/* Floating Host Container */
+#govbenefit-mentor-panel {
+  position: fixed;
+  top: 40px;
+  right: 24px;
+  width: 360px;
+  max-height: calc(100vh - 80px);
+  background: #ffffff;
+  border: 1px solid var(--gbf-border);
+  border-top: 4px solid var(--gbf-saffron);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(20, 33, 61, 0.18);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  color: var(--gbf-ink);
+  z-index: 2147483647; /* Highest z-index */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#govbenefit-mentor-panel.gbf-minimized {
+  max-height: 48px;
+  width: 220px;
+}
+
+/* Active field outline on government portal */
+.govbenefit-highlight-field {
+  outline: 2px solid var(--gbf-saffron) !important;
+  box-shadow: 0 0 0 4px rgba(232, 135, 30, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Header */
+.gbf-header {
+  background: var(--gbf-ink);
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.gbf-header-brand {
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gbf-header-brand span {
+  color: var(--gbf-saffron);
+}
+
+.gbf-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.gbf-btn-icon {
+  background: transparent;
+  border: none;
+  color: #c3cce0;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.gbf-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Scrollable Content Body */
+.gbf-body {
+  padding: 14px 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Active Field Label Pill */
+.gbf-field-badge {
+  background: #f1f4f9;
+  border: 1px solid var(--gbf-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.gbf-field-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gbf-ink);
+}
+
+.gbf-req-pill {
+  display: inline-block;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+
+/* Explanation Cards */
+.gbf-card {
+  background: #f8fafd;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.gbf-card-title {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gbf-muted);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gbf-card-text {
+  font-size: 12.5px;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* Dropdown Option Explainer */
+.gbf-options-box {
+  margin-top: 10px;
+}
+
+.gbf-option-item {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+
+.gbf-option-item.gbf-profile-recommended {
+  border-left: 3px solid var(--gbf-green);
+  background: #f4fbf7;
+}
+
+.gbf-option-label {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--gbf-ink);
+}
+
+.gbf-option-desc {
+  font-size: 11.5px;
+  color: #475569;
+  margin-top: 2px;
+}
+
+/* Saved Profile Match */
+.gbf-profile-match {
+  background: #fffbf5;
+  border: 1px solid #fde68a;
+  border-left: 4px solid var(--gbf-saffron);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.gbf-profile-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 4px 0 8px;
+}
+
+.gbf-btn-use {
+  background: var(--gbf-saffron);
+  color: #1d1203;
+  border: none;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gbf-btn-use:hover {
+  background: var(--gbf-saffron-dark);
+  color: #fff;
+}
+
+.gbf-btn-edit {
+  background: transparent;
+  color: var(--gbf-muted);
+  border: 1px solid #cbd5e1;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  margin-left: 6px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.gbf-btn-edit:hover {
+  background: #f1f5f9;
+  color: var(--gbf-ink);
+}
+
+/* Human Action Boundary Banner (Strict Security) */
+.gbf-boundary-alert {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-left: 4px solid #ef4444;
+  border-radius: 8px;
+  padding: 12px;
+  color: #991b1b;
+  margin-bottom: 12px;
+}
+
+.gbf-boundary-alert h4 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gbf-boundary-alert p {
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Ask Mentor Input Box */
+.gbf-ask-box {
+  border-top: 1px solid #e2e8f0;
+  padding: 12px 16px;
+  background: #fff;
+}
+
+.gbf-quick-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+}
+
+.gbf-chip {
+  background: #f1f4f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--gbf-ink);
+}
+
+.gbf-chip:hover {
+  background: #e2e8f0;
+}
+
+.gbf-input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.gbf-input {
+  flex: 1;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+}
+
+.gbf-input:focus {
+  border-color: var(--gbf-saffron);
+}
+
+.gbf-btn-ask {
+  background: var(--gbf-ink);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gbf-btn-ask:hover {
+  background: #002244;
+}
+
+/* AI Answer Display */
+.gbf-ai-response {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #166534;
+}
